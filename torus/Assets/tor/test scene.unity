@@ -432,8 +432,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fb01fd234ad3d1a48a56d6b2e2fdbee8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  unitMesh: {fileID: 0}
-  unitMaterial: {fileID: 2100000, guid: 801db2d997a562b4ea333aa4593ce0f0, type: 2}
+  unitMesh: {fileID: -5495902117074765545, guid: e49a44864a15fbd46b5a0ed07940a6a3, type: 3}
+  unitMaterial: {fileID: -876546973899608171, guid: e49a44864a15fbd46b5a0ed07940a6a3, type: 3}
 --- !u!4 &1903849744
 Transform:
   m_ObjectHideFlags: 0
