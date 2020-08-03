@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using Unity.Entities;
 using Unity.Transforms;
 using Unity.Rendering;
@@ -15,16 +13,54 @@ public class Spawner : MonoBehaviour
 
     [SerializeField] private Mesh unitMesh;
     [SerializeField] private Material unitMaterial;
+    [SerializeField] private GameObject gameObjectPrefab;
+
+    private Entity entityPrefab;
+    private World defaltWorld;
+    private EntityManager entityManager;
 
     // Start is called before the first frame update
     void Start()
     {
-        MakeEntity();
+        defaltWorld = World.DefaultGameObjectInjectionWorld;
+        entityManager = defaltWorld.EntityManager;
+
+        GameObjectConversionSettings settings = GameObjectConversionSettings.FromWorld(defaltWorld,null);
+        entityPrefab = GameObjectConversionUtility.ConvertGameObjectHierarchy(gameObjectPrefab, settings);
+
+        //InstantiateEntity(new float3(4f,0f, 4f));//make one entity
+
+        InstantiateEntityGrid(10, 10, 1f);
     }
+
+    private void InstantiateEntity(float3 positon)
+    {
+        Entity myEntity = entityManager.Instantiate(entityPrefab);
+        entityManager.SetComponentData(myEntity, new Translation
+        {
+            Value = positon
+        });
+    } 
+
+    private void InstantiateEntityGrid(int dimx, int dimy, float spacing = 1f)
+    {
+        for (int i = 0; i< dimx; i++)
+        {
+            for (int j = 0; j < dimy; j++)
+            {
+                InstantiateEntity(new float3(i*spacing, j*spacing, 4f));
+            }
+        }
+                     
+    }
+
+
 
     private void MakeEntity()
     {
         EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
+
+        
 
         EntityArchetype archatype = entityManager.CreateArchetype(
             typeof(Translation),
@@ -36,16 +72,21 @@ public class Spawner : MonoBehaviour
 
         Entity myEntity = entityManager.CreateEntity(archatype);
 
-
-        entityManager.AddComponentData(myEntity, new LocalToWorld
-        {
-        });
+        //entityManager.CreateEntity(archatype);
+        //entityManager.AddComponentData(myEntity, new LocalToWorld
+        //{
+        // });
 
 
         entityManager.AddComponentData(myEntity, new Translation
         {
-            Value = new float3(2f, 0f, 4f)
+            Value = new float3(0f, 0f, 1f)
         });
+
+       //ntityManager.AddComponentData(myEntity, new Rotation
+       //
+       //   Value = quaternion.EulerXYZ(new float3(0f, 45f, 0f))
+       //);
 
         entityManager.AddSharedComponentData(myEntity, new RenderMesh
         {
@@ -53,7 +94,7 @@ public class Spawner : MonoBehaviour
             material  = unitMaterial
         });
 
-        entityManager.CreateEntity();
+        
 
     }
 }
