@@ -16,7 +16,8 @@ pub fn export_obj(mesh: Mesh, obj_name: &str, file_name: &str) -> std::io::Resul
     for face in mesh.faces().iter() {
         let mut list = Vec::new();
         for v in face.iter() {
-            list.push(format!("{}", v));
+            // Offset the indexing as .obj files start at index 1, not 0
+            list.push(format!("{}", v + 1));
         };
         data.push(format!("f {}", list.join(" ")));
     }

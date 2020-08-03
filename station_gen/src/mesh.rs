@@ -6,8 +6,8 @@ pub type Face = Vec<usize>;
 pub struct Mesh {
     pub(crate) verticies: Vec<Vertex>,
     pub(crate) faces: Vec<Face>,
-    pub(crate) tex_coords: Vec<Vertex>,
-    pub(crate) normals: Vec<Vertex>,
+    pub(crate) _tex_coords: Vec<Vertex>,
+    pub(crate) _normals: Vec<Vertex>,
     name: Option<String>,
 }
 
@@ -17,8 +17,8 @@ impl Mesh {
         Self {
             verticies: Vec::new(),
             faces: Vec::new(),
-            tex_coords: Vec::new(),
-            normals: Vec::new(),
+            _tex_coords: Vec::new(),
+            _normals: Vec::new(),
             name: None,
         }
     }
