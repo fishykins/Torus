@@ -10,7 +10,7 @@ pub fn export_obj(mesh: Mesh, obj_name: &str, file_name: &str) -> std::io::Resul
     data.push(format!("o {}", obj_name));
 
     for vert in mesh.verticies().iter() {
-        data.push(format!("v {} {} {}", vert.x, vert.y, vert.z));
+        data.push(format!("v {} {} {}", vert.x, vert.z, vert.y));
     }
 
     for face in mesh.faces().iter() {
@@ -20,9 +20,7 @@ pub fn export_obj(mesh: Mesh, obj_name: &str, file_name: &str) -> std::io::Resul
         };
         data.push(format!("f {}", list.join(" ")));
     }
-    
 
     file.write(data.join("\n").as_bytes())?;
-
     Ok(())
 }

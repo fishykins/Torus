@@ -70,3 +70,4 @@ crashlytics-build.properties
 # All Rust related things
 /station_gen/[Tt]arget/
 /station_gen/Cargo.lock
+/[Bb]in/

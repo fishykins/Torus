@@ -4,8 +4,11 @@ pub type Vertex = Vec3<f32>;
 pub type Face = Vec<usize>;
 
 pub struct Mesh {
-    verticies: Vec<Vertex>,
-    faces: Vec<Face>,
+    pub(crate) verticies: Vec<Vertex>,
+    pub(crate) faces: Vec<Face>,
+    pub(crate) tex_coords: Vec<Vertex>,
+    pub(crate) normals: Vec<Vertex>,
+    name: Option<String>,
 }
 
 impl Mesh {
@@ -14,7 +17,14 @@ impl Mesh {
         Self {
             verticies: Vec::new(),
             faces: Vec::new(),
+            tex_coords: Vec::new(),
+            normals: Vec::new(),
+            name: None,
         }
+    }
+
+    pub fn set_name(&mut self, name: Option<String>) {
+        self.name = name;
     }
 
     /// Adds a lone vertex to the mesh. Be sure to give him some friends!
