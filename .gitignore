@@ -66,3 +66,7 @@ crashlytics-build.properties
 # Temporary auto-generated Android Assets
 /torus/[Aa]ssets/[Ss]treamingAssets/aa.meta
 /torus/[Aa]ssets/[Ss]treamingAssets/aa/*
+
+# All Rust related things
+/station_gen/[Tt]arget/
+/station_gen/Cargo.lock

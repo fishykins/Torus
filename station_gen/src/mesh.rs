@@ -1,0 +1,53 @@
+use vek::Vec3;
+
+pub type Vertex = Vec3<f32>;
+pub type Face = Vec<usize>;
+
+pub struct Mesh {
+    verticies: Vec<Vertex>,
+    faces: Vec<Face>,
+}
+
+impl Mesh {
+
+    pub fn new() -> Self {
+        Self {
+            verticies: Vec::new(),
+            faces: Vec::new(),
+        }
+    }
+
+    /// Adds a lone vertex to the mesh. Be sure to give him some friends!
+    pub fn add_vertex(&mut self, vertex: Vertex) -> usize {
+        let i = self.verticies.len();
+        self.verticies.push(vertex);
+        i
+    }
+
+    /// Adds a face to the mesh. Assumes the vertecies are already in the mesh
+    pub fn add_face(&mut self, face: Face) -> usize {
+        let i = self.faces.len();
+        self.faces.push(face);
+        i
+    }
+
+    /// Generates a face from given points and adds the vertecies to the mesh. Not to be used in conjunction with add_vertex or add_face
+    pub fn make_face(&mut self, verticies: Vec<Vertex>) -> usize {
+        let mut face = Vec::with_capacity(verticies.len());
+        for i in 0..verticies.len() {
+            let vi = self.add_vertex(verticies[i]);
+            face[i] = vi;
+        }
+        self.add_face(face)
+    }
+
+    /// Getter for verts
+    pub fn verticies(&self) -> &Vec<Vertex> {
+        &self.verticies
+    }
+
+    /// getter for faces. Duh
+    pub fn faces(&self) -> &Vec<Face> {
+        &self.faces
+    }
+}
