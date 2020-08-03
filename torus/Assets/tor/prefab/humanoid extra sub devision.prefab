@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 3897338015664461578}
   - component: {fileID: 124407352668543151}
   - component: {fileID: 2764379602197523557}
+  - component: {fileID: 3006339408820952868}
   m_Layer: 0
   m_Name: humanoid extra sub devision
   m_TagString: Untagged
@@ -81,3 +82,16 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &3006339408820952868
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4421955297564560816}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d20ce7766d2cd4f4d8a29b1e1065beb9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  value: 0

@@ -11,7 +11,7 @@ using Unity.Mathematics;
 public class Spawner : MonoBehaviour
 {
 
-    [SerializeField] private Mesh unitMesh;
+    [SerializeField] private Mesh unitMesh;// these are enterable things
     [SerializeField] private Material unitMaterial;
     [SerializeField] private GameObject gameObjectPrefab;
 
@@ -30,13 +30,13 @@ public class Spawner : MonoBehaviour
 
         //InstantiateEntity(new float3(4f,0f, 4f));//make one entity
 
-        InstantiateEntityGrid(10, 10, 1f);
+        InstantiateEntityGrid(10, 10, 1f);//greate a grid of entities
     }
 
-    private void InstantiateEntity(float3 positon)
+    private void InstantiateEntity(float3 positon)//take the position vector
     {
-        Entity myEntity = entityManager.Instantiate(entityPrefab);
-        entityManager.SetComponentData(myEntity, new Translation
+        Entity myEntity = entityManager.Instantiate(entityPrefab);//create the entity
+        entityManager.SetComponentData(myEntity, new Translation//add data to it
         {
             Value = positon
         });
@@ -44,9 +44,9 @@ public class Spawner : MonoBehaviour
 
     private void InstantiateEntityGrid(int dimx, int dimy, float spacing = 1f)
     {
-        for (int i = 0; i< dimx; i++)
+        for (int i = 0; i< dimx; i++)//create x values
         {
-            for (int j = 0; j < dimy; j++)
+            for (int j = 0; j < dimy; j++)//create y values
             {
                 InstantiateEntity(new float3(i*spacing, j*spacing, 4f));
             }
