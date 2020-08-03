@@ -36,6 +36,12 @@ public class Spawner : MonoBehaviour
 
         Entity myEntity = entityManager.CreateEntity(archatype);
 
+
+        entityManager.AddComponentData(myEntity, new LocalToWorld
+        {
+        });
+
+
         entityManager.AddComponentData(myEntity, new Translation
         {
             Value = new float3(2f, 0f, 4f)
@@ -49,11 +55,5 @@ public class Spawner : MonoBehaviour
 
         entityManager.CreateEntity();
 
-
-
-
-
     }
-
-
 }
