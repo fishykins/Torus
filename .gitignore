@@ -71,4 +71,8 @@ crashlytics-build.properties
 /station_gen/[Tt]arget/
 /station_gen/Cargo.lock
 /[Bb]in/
+/[Tt]arget/
 *.lock
+
+# Vscode
+/.vscode/
