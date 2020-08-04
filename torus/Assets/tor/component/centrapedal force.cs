@@ -1,7 +1,7 @@
 ﻿using Unity.Entities;
 
 [GenerateAuthoringComponent]
-public class centrapedalforce : IComponentData
+public struct Centrapedalforce : IComponentData
 {
     public float value;
 }

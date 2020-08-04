@@ -30,7 +30,7 @@ public class Spawner : MonoBehaviour
 
         //InstantiateEntity(new float3(4f,0f, 4f));//make one entity
 
-        InstantiateEntityGrid(10, 10, 1f);//greate a grid of entities
+        //InstantiateEntityGrid(10, 10, 1f);//greate a grid of entities
     }
 
     private void InstantiateEntity(float3 positon)//take the position vector
