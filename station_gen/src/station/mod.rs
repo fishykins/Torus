@@ -2,7 +2,6 @@ use vek::{Vec2, Vec3};
 use crate::mesh::*;
 
 pub mod module;
-pub mod cplane;
 pub mod ring_space;
 
 #[derive(Debug)]

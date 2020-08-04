@@ -1,24 +1,24 @@
 use vek::{Vec2, Vec3, Vec4};
 use crate::mesh::*;
-use crate::station::cplane::CPlane;
+use crate::station::ring_space::*;
 
 const LENGTH_K: f32 = 3.;
-const WIDTH_K: f32 = 2.;
+const WIDTH_K: f32 = 1.;
 const HEIGHT_K: f32 = 1.;
 
+#[derive(Clone)]
 pub struct Interior {
-    k: f32,
-    arc: f32,
-    radius: f32,
-    floor: CPlane,
-    ceiling: CPlane,
+    bounding_box: RBox,
 }
 
+#[derive(Clone)]
 pub struct Exterior {
 
 }
 
+#[derive(Clone)]
 pub struct Module {
+    arc: f32,
     center: Vec2<f32>,
     interior: Interior,
     exterior: Exterior,
@@ -28,25 +28,12 @@ impl Interior {
     /// arc: the circle circumference this will occupy.
     /// radius: the distance from the center of the station to the center of this module
     pub fn new(arc: f32, radius: f32) -> Self {
-        let theta = (- arc / 2., arc / 2.);
-        let front = Vec2::new(radius * theta.1.cos(), radius * theta.1.sin());
-        let back = Vec2::new(radius * theta.0.cos(), radius * theta.0.sin());
-        let k = back.distance(front) / LENGTH_K;
-        let radius_floor = radius + k * HEIGHT_K / 2.;
-        let radius_ceiling = radius_floor - (k * HEIGHT_K);
-
+        let mut bounding_box = RBox::new(Vec2::zero(), radius, arc, 0., 0.);
+        let k = bounding_box.length() / LENGTH_K;
+        bounding_box.set_size(k * WIDTH_K, k * HEIGHT_K);
         Self {
-            k,
-            arc,
-            radius,
-            floor: CPlane::new(Vertex::zero(), arc, radius_floor, k * WIDTH_K),
-            ceiling: CPlane::new(Vertex::zero(), arc, radius_ceiling, k * WIDTH_K),
+            bounding_box,
         }
-    }
-
-    /// Gets a plane that covers the entire module floor space at a given height from the base
-    pub fn get_cplane(&self, height: f32) -> CPlane {
-        CPlane::new(Vertex::zero(), self.arc, self.radius - height + (self.k * HEIGHT_K / 2.), self.k * WIDTH_K)
     }
 }
 
@@ -64,15 +51,41 @@ impl Module {
     /// radius: the radius from the ring center to the middle of the module
     pub fn new(theta: f32, radius: f32) -> Self {
         let center = Vec2::new(radius, 0.);
-
         //Build structs
         let interior = Interior::new(theta, radius);
         let exterior = Exterior::new();
-
         Self {
+            arc: theta,
             center,
             interior,
             exterior,
         }
+    }
+
+    pub fn arc(&self) -> f32 {
+        self.arc.clone()
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use std::fs::File;
+    use std::io::BufReader;
+    use crate::parse::parse_obj;
+    use crate::export::*;
+    use crate::station::ring_space::*;
+    use vek::*;
+
+    #[test]
+    fn module_test() {
+        let file = File::open(format!("assets/module.obj")).unwrap();
+        let input = BufReader::new(file);
+        let mut mesh = parse_obj(input).unwrap();
+        let RBox = RBox::new(Vec2::zero(), 32., (2. * std::f64::consts::PI as f32) / 16., 8., 8.);
+        RBox.map_mesh(&mut mesh);
+        mesh.normalize(Vec3::new(0., 32., 0.));
+        mesh.invert_z();
+        export_obj(mesh, "module", "module_test").unwrap();
     }
 }

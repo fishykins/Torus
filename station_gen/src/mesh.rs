@@ -51,6 +51,23 @@ impl Mesh {
         self.add_face(face)
     }
 
+    /// Normalizes the mesh using given Vec3
+    pub fn normalize(&mut self, offset: Vec3<f32>) {
+        self.map_verts(|v| v - offset);
+    }
+
+    pub fn invert_x(&mut self) {
+        self.map_verts(|v| Vec3::new(-v.x, v.y, v.z));
+    }
+
+    pub fn invert_y(&mut self) {
+        self.map_verts(|v| Vec3::new(v.x, -v.y, v.z));
+    }
+
+    pub fn invert_z(&mut self) {
+        self.map_verts(|v| Vec3::new(v.x, v.y, -v.z));
+    }
+
     /// Getter for verts
     pub fn verticies(&self) -> &Vec<Vertex> {
         &self.verticies
@@ -59,5 +76,9 @@ impl Mesh {
     /// getter for faces. Duh
     pub fn faces(&self) -> &Vec<Face> {
         &self.faces
+    }
+
+    pub fn map_verts<F>(&mut self, f: F) where F: Fn(&Vertex) -> Vertex {
+        self.verticies = self.verticies.iter().map(|x| f(&x)).collect();
     }
 }
