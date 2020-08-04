@@ -1,6 +1,10 @@
 use vek::{Vec2, Vec3};
 use crate::mesh::*;
 
+pub mod module;
+pub mod cplane;
+pub mod ring_space;
+
 #[derive(Debug)]
 struct Spoke {
     a: Vec2<f32>,
@@ -32,10 +36,6 @@ impl Spoke {
             b,
         }
     }
-
-    fn center(&self) -> Vec2<f32> {
-        Vec2::new((self.a.x + self.b.x) / 2., (self.a.y + self.b.y) / 2. )
-    }
 }
 
 impl Module {
@@ -53,26 +53,57 @@ impl Module {
         let harc = self.arc / 2.;
         let angle_min = self.angle - harc;
         let angle_max = self.angle + harc;
+        let width = self.rm;
 
-        let cp = Vec2::new(r.1 * self.angle.cos(), r.1 * self.angle.sin());
+        let _cp = Vec2::new(r.1 * self.angle.cos(), r.1 * self.angle.sin());
+        
+        // ================= Station Inner ===================== //
+        // Floor
         let p1 = Vec2::new(r.1 * angle_min.cos(), r.1 * angle_min.sin());
         let p2 = Vec2::new(r.1 * angle_max.cos(), r.1 * angle_max.sin());
-        let p3 = Vec2::new(r.0 * angle_min.cos(), r.0 * angle_min.sin());
-        let p4 = Vec2::new(r.0 * angle_max.cos(), r.0 * angle_max.sin());
 
-        mesh.add_vertex(cp.into());
-        let v1 = mesh.add_vertex(Vec3::new(p1.x, p1.y, -10.));
-        let v2 = mesh.add_vertex(Vec3::new(p1.x, p1.y, 10.));
-        let v3 = mesh.add_vertex(Vec3::new(p2.x, p2.y, -10.));
-        let v4 = mesh.add_vertex(Vec3::new(p2.x, p2.y, 10.));
+        let dist = p1.distance(p2);
+        let loop_width = 3.2; // Target distance between loop-cuts
+        let edge_loop_count = (dist / loop_width).ceil() as u8;
+        let edge_arc = self.arc / edge_loop_count as f32;
 
-        let v5 = mesh.add_vertex(Vec3::new(p3.x, p3.y, -10.));
-        let v6 = mesh.add_vertex(Vec3::new(p3.x, p3.y, 10.));
-        let v7 = mesh.add_vertex(Vec3::new(p4.x, p4.y, -10.));
-        let v8 = mesh.add_vertex(Vec3::new(p4.x, p4.y, 10.));
+        // Make the first edge
+        let v1 = mesh.add_vertex(Vec3::new(p1.x, p1.y, -width));
+        let v2 = mesh.add_vertex(Vec3::new(p1.x, p1.y, width));
+        let v3: usize;
+        let v4: usize;
+        let mut l1 = v1;
+        let mut l2 = v2;
+        let mut l3 = 0;
+        let mut l4 = 0;
 
-        mesh.add_face(vec![v1, v2, v4, v3]);
+        for i in 0..edge_loop_count+1 {
+            let angle = angle_min + edge_arc * i as f32;
+            let target = Vec2::new(r.1 * angle.cos(), r.1 * angle.sin());
+            l3 = mesh.add_vertex(Vec3::new(target.x, target.y, -width));
+            l4 = mesh.add_vertex(Vec3::new(target.x, target.y, width));
+
+            mesh.add_face(vec![l3, l4, l2, l1]);
+            // Move 3,4 -> 1,2
+            l1 = l3;
+            l2 = l4;
+        }
+
+        v3 = l3.clone();
+        v4 = l4.clone();
+        
+        // Roof
+        let roof1 = Vec2::new(r.0 * angle_min.cos(), r.0 * angle_min.sin());
+        let roof2 = Vec2::new(r.0 * angle_max.cos(), r.0 * angle_max.sin());
+        let v5 = mesh.add_vertex(Vec3::new(roof1.x, roof1.y, -width));
+        let v6 = mesh.add_vertex(Vec3::new(roof1.x, roof1.y, width));
+        let v7 = mesh.add_vertex(Vec3::new(roof2.x, roof2.y, -width));
+        let v8 = mesh.add_vertex(Vec3::new(roof2.x, roof2.y, width));
         mesh.add_face(vec![v5, v6, v8, v7]);
+
+        // Walls
+        mesh.add_face(vec![v3, v7, v5, v1]);
+        mesh.add_face(vec![v4, v8, v6, v2]);
     }
 }
 
@@ -136,7 +167,7 @@ mod tests {
 
     #[test]
     fn build_test() {
-        let mesh = build(16., 4., 6, 4).unwrap();
+        let mesh = build(1000., 64., 6, 4).unwrap();
         export_obj(mesh, "station", "station_test").unwrap();
     }
 }
