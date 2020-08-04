@@ -36,6 +36,7 @@ pub struct RPos {
 #[derive(Clone, Debug)]
 pub struct RBox {
     origin: Vec2<f32>,
+    angle: f32,
     arm: f32,
     arc: f32,
     height: f32,
@@ -66,12 +67,13 @@ impl From<&Vec3<f32>> for RPos {
 }
 
 impl RBox {
-    pub fn new(origin: Vec2<f32>, arm: f32, arc: f32, height: f32, width: f32) -> Self {
+    pub fn new(origin: Vec2<f32>, angle: f32, arm: f32, arc: f32, height: f32, width: f32) -> Self {
         let theta = (- arc / 2., arc / 2.);
         let front = Vec2::new(arm * theta.1.cos(), arm * theta.1.sin());
         let back = Vec2::new(arm * theta.0.cos(), arm * theta.0.sin());
         Self {
             origin,
+            angle,
             arm,
             arc,
             height,
@@ -81,17 +83,11 @@ impl RBox {
     }
 
     pub fn ring_to_world(&self, rpos: RPos) -> Vec3<f32> {
-        println!("RPOS: {:?}", rpos);
-        let theta = lerp(-self.arc / 2., self.arc / 2., clamp(0.,1., rpos.arc));
-        println!("    theta = {}", theta);
+        let theta = lerp(self.angle -self.arc / 2., self.angle + self.arc / 2., clamp(0.,1., rpos.arc));
         let r = self.arm + (self.height * 2. * rpos.y) / 2.;
-        println!("    r = {}", r);
         let x = lerp(-self.width / 2., self.width / 2., rpos.x);
-        println!("    x = {}", x);
         let y = self.origin.x + r * theta.cos();
-        println!("    y = {}", y);
         let z = self.origin.y + r * theta.sin();
-        println!("    z = {}", z);
         Vec3::new(x, y, z)
     }
 
@@ -135,7 +131,7 @@ mod tests {
     #[test]
     fn ring_space_test() {
         let mut mesh = Mesh::new();
-        let rbox = RBox::new(Vec2::zero(), 500., (2. * std::f64::consts::PI as f32) / 8., 32., 32.);
+        let rbox = RBox::new(Vec2::zero(), 0., 500., (2. * std::f64::consts::PI as f32) / 8., 32., 32.);
         println!("RBOX = {:?}", rbox);
 
         mesh.add_vertex(Vec3::new(1.,1.,0.));

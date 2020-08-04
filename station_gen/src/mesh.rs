@@ -3,6 +3,7 @@ use vek::Vec3;
 pub type Vertex = Vec3<f32>;
 pub type Face = Vec<usize>;
 
+#[derive(Clone)]
 pub struct Mesh {
     pub(crate) verticies: Vec<Vertex>,
     pub(crate) faces: Vec<Face>,

@@ -47,16 +47,16 @@ mod tests {
         let file = File::open(format!("assets/primatives/cube.obj")).unwrap();
         let input = BufReader::new(file);
         let mesh = parse_obj(input).unwrap();
-        let mut index = 0;
-        for i in mesh.verticies() {
-            println!("v{}: {:?}", index, i);
-            index += 1;
-        }
-        index = 0;
-        for i in mesh.faces() {
-            println!("f{}: {:?}", index, i);
-            index += 1;
-        }
+        //let mut index = 0;
+        // for i in mesh.verticies() {
+        //     println!("v{}: {:?}", index, i);
+        //     index += 1;
+        // }
+        // index = 0;
+        // for i in mesh.faces() {
+        //     println!("f{}: {:?}", index, i);
+        //     index += 1;
+        // }
         assert_eq!(mesh.faces()[2], [7, 6, 4, 5], "Face data is wrong");
         assert_eq!(mesh.verticies()[7], Vec3::new(-1., 1., -1.), "Vert data is wrong");
     }
