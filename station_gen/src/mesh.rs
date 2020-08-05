@@ -1,9 +1,10 @@
-use vek::Vec3;
+pub use vek::Vec3;
 
 pub type Vertex = Vec3<f32>;
 pub type Face = Vec<usize>;
 
 #[derive(Clone)]
+#[no_mangle]
 pub struct Mesh {
     pub(crate) verticies: Vec<Vertex>,
     pub(crate) faces: Vec<Face>,
@@ -82,4 +83,9 @@ impl Mesh {
     pub fn map_verts<F>(&mut self, f: F) where F: Fn(&Vertex) -> Vertex {
         self.verticies = self.verticies.iter().map(|x| f(&x)).collect();
     }
+
+    #[no_mangle]
+    pub extern fn mesh_double_input(&self, input: i32) -> i32 {
+    input * 2
+}
 }

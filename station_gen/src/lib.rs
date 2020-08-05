@@ -1,13 +1,14 @@
-//#[macro_use]
-//mod error;
 pub mod mesh;
 pub mod export;
 pub mod parse;
 pub mod primatives;
 
 pub mod station;
-//pub mod lexer;
 
+#[no_mangle]
+pub extern fn double_input(input: i32) -> i32 {
+    input * 2
+}
 
 #[cfg(test)]
 mod tests {

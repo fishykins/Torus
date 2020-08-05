@@ -76,3 +76,7 @@ crashlytics-build.properties
 
 # Vscode
 /.vscode/
+/torus/.vscode/
+
+# Stop rust libraries from getting used. Compile them yourselves, damn it!
+/[Tt]orus/[Aa]ssets/[Pp]lugins/

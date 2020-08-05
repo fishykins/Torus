@@ -4,7 +4,9 @@ version = "0.1.0"
 authors = ["fishykins <caspar.m.green@gmail.com>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "station" # the name of the library that will be generated
+crate-type = ["dylib"]
 
 [dependencies]
 vek = "0.12.0"
