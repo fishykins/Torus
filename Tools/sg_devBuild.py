@@ -2,13 +2,13 @@ import os
 from pathlib import Path
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
-plugin_name = "station"
+plugin_name = "utor"
 extention = "so" #TODO: Add windows support. 
 
 root = Path(dir_path).parent
-station_gen_path = os.path.join(root, "station_gen")
+station_gen_path = os.path.join(root, "Utor")
 
-plugin_path = os.path.join(root, "torus/Assets/Plugins/lib" + plugin_name + "." + extention)
+plugin_path = os.path.join(root, "Game/Assets/Utor/lib" + plugin_name + "." + extention)
 build_path = os.path.join(root, "target/debug/lib" + plugin_name + "." + extention)
 
 os.chdir(station_gen_path)
