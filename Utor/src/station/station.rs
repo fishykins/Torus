@@ -1,6 +1,7 @@
 use super::wing::Wing;
 use crate::parse::parse_obj;
 use std::fs::File;
+use crate::export::*;
 use std::io::BufReader;
 
 
@@ -26,13 +27,10 @@ impl Station {
     }
 
     pub fn build(&self) {
-        let file = File::open(format!("assets/module.obj")).unwrap();
-        let input = BufReader::new(file);
-        let mesh = parse_obj(input).unwrap();
-
         for w in &self.wings {
-            for m in &w.modules {;
-                m.build(&mesh);
+            for m in &w.modules {
+                let mesh = m.build();
+                export_obj(mesh, format!("module_{}", m.index()));
             }
         }
     }

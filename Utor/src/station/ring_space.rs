@@ -134,6 +134,7 @@ mod tests {
         let rbox = RBox::new(Vec2::zero(), 0., 500., (2. * std::f64::consts::PI as f32) / 8., 32., 32.);
         println!("RBOX = {:?}", rbox);
 
+        mesh.set_name("Curved Box");
         mesh.add_vertex(Vec3::new(1.,1.,0.));
         mesh.add_vertex(Vec3::new(1.,0.,0.));
         mesh.add_vertex(Vec3::new(1.,1.,1.));
@@ -154,6 +155,6 @@ mod tests {
         mesh.normalize(Vec3::new(0., 468., 0.));
         mesh.invert_z();
         
-        export_obj(mesh, "curved_box", "ring_space_test").unwrap();
+        export_obj(mesh, "ring_space_test").unwrap();
     }
 }

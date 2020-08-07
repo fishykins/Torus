@@ -25,8 +25,8 @@ impl Mesh {
         }
     }
 
-    pub fn set_name(&mut self, name: Option<String>) {
-        self.name = name;
+    pub fn set_name(&mut self, name: &str) {
+        self.name = Some(name.into());
     }
 
     /// Adds a lone vertex to the mesh. Be sure to give him some friends!
@@ -78,6 +78,10 @@ impl Mesh {
     /// getter for faces. Duh
     pub fn faces(&self) -> &Vec<Face> {
         &self.faces
+    }
+
+    pub fn name(&self) -> Option<String> {
+        self.name
     }
 
     pub fn map_verts<F>(&mut self, f: F) where F: Fn(&Vertex) -> Vertex {

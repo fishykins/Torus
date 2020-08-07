@@ -13,6 +13,7 @@ mod tests {
     #[test]
     fn build_obj() {
         let mesh = default_cube(10.);
-        export_obj(mesh, "cube", "test_object").unwrap();
+        mesh.set_name("cube");
+        export_obj(mesh, "test_object").unwrap();
     }
 }
