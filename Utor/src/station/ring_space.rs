@@ -1,7 +1,9 @@
 use vek::{Vec2, Vec3};
 use crate::mesh::*;
 
-fn clamp(min: f32, max: f32, value: f32) -> f32 {
+type Float = f64;
+
+fn clamp(min: Float, max: Float, value: Float) -> Float {
     if value > max {
         return max;
     } else if value < min {
@@ -11,7 +13,7 @@ fn clamp(min: f32, max: f32, value: f32) -> f32 {
 }
 
 /// Lerp between a and b by amount (0 - 1)
-fn lerp(a: f32, b: f32, amount: f32) -> f32 {
+fn lerp(a: Float, b: Float, amount: Float) -> Float {
     if a == b {
         return a;
     }
@@ -27,25 +29,25 @@ fn lerp(a: f32, b: f32, amount: f32) -> f32 {
 /// Represents a single point in ring space. Each value must fall between 0 and 1
 #[derive(Clone, Debug)]
 pub struct RPos {
-    arc: f32,
-    y: f32,
-    x: f32,
+    arc: Float,
+    y: Float,
+    x: Float,
 }
 
 /// Represents a boundingbox that can translate between ring and world space. 
 #[derive(Clone, Debug)]
 pub struct RBox {
-    origin: Vec2<f32>,
-    angle: f32,
-    arm: f32,
-    arc: f32,
-    height: f32,
-    width: f32,
-    length: f32,
+    origin: Vec2<Float>,
+    angle: Float,
+    arm: Float,
+    arc: Float,
+    height: Float,
+    width: Float,
+    length: Float,
 }
 
 impl RPos {
-    pub fn new(x: f32, y: f32, arc: f32) -> Self {
+    pub fn new(x: Float, y: Float, arc: Float) -> Self {
         Self {
             arc: clamp(0., 1., arc),
             y: clamp(0., 1., y),
@@ -54,20 +56,20 @@ impl RPos {
     }
 }
 
-impl From<Vec3<f32>> for RPos {
-    fn from(v: Vec3<f32>) -> Self {
+impl From<Vec3<Float>> for RPos {
+    fn from(v: Vec3<Float>) -> Self {
         Self::new(v.x, v.y, v.z)
     }
 }
 
-impl From<&Vec3<f32>> for RPos {
-    fn from(v: &Vec3<f32>) -> Self {
+impl From<&Vec3<Float>> for RPos {
+    fn from(v: &Vec3<Float>) -> Self {
         Self::new(v.x, v.y, v.z)
     }
 }
 
 impl RBox {
-    pub fn new(origin: Vec2<f32>, angle: f32, arm: f32, arc: f32, height: f32, width: f32) -> Self {
+    pub fn new(origin: Vec2<Float>, angle: Float, arm: Float, arc: Float, height: Float, width: Float) -> Self {
         let theta = (- arc / 2., arc / 2.);
         let front = Vec2::new(arm * theta.1.cos(), arm * theta.1.sin());
         let back = Vec2::new(arm * theta.0.cos(), arm * theta.0.sin());
@@ -82,7 +84,7 @@ impl RBox {
         }
     }
 
-    pub fn ring_to_world(&self, rpos: RPos) -> Vec3<f32> {
+    pub fn ring_to_world(&self, rpos: RPos) -> Vec3<Float> {
         let theta = lerp(self.angle -self.arc / 2., self.angle + self.arc / 2., clamp(0.,1., rpos.arc));
         let r = self.arm + (self.height * 2. * rpos.y) / 2.;
         let x = lerp(-self.width / 2., self.width / 2., rpos.x);
@@ -91,19 +93,19 @@ impl RBox {
         Vec3::new(x, y, z)
     }
 
-    pub fn width(&self) -> f32 {
+    pub fn width(&self) -> Float {
         self.width.clone()
     }
 
-    pub fn height(&self) -> f32 {
+    pub fn height(&self) -> Float {
         self.height.clone()
     }
 
-    pub fn length(&self) -> f32 {
+    pub fn length(&self) -> Float {
         self.length.clone()
     }
 
-    pub fn set_size(&mut self, width: f32, height: f32) {
+    pub fn set_size(&mut self, width: Float, height: Float) {
         self.width = width;
         self.height = height;
     }
@@ -120,7 +122,6 @@ mod tests {
     use crate::export::*;
     use crate::mesh::*;
     use crate::station::ring_space::*;
-    use vek::*;
 
     #[test]
     fn lerp_test() {
@@ -131,10 +132,10 @@ mod tests {
     #[test]
     fn ring_space_test() {
         let mut mesh = Mesh::new();
-        let rbox = RBox::new(Vec2::zero(), 0., 500., (2. * std::f64::consts::PI as f32) / 8., 32., 32.);
+        let rbox = RBox::new(Vec2::zero(), 0., 500., (2. * std::f64::consts::PI) / 8., 32., 32.);
         println!("RBOX = {:?}", rbox);
 
-        mesh.set_name("Curved Box");
+        mesh.set_name("Curved Box".to_string());
         mesh.add_vertex(Vec3::new(1.,1.,0.));
         mesh.add_vertex(Vec3::new(1.,0.,0.));
         mesh.add_vertex(Vec3::new(1.,1.,1.));
@@ -155,6 +156,6 @@ mod tests {
         mesh.normalize(Vec3::new(0., 468., 0.));
         mesh.invert_z();
         
-        export_obj(mesh, "ring_space_test").unwrap();
+        export_obj(mesh, "ring_space_test".to_string()).unwrap();
     }
 }

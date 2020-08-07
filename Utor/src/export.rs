@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::prelude::*;
 use crate::mesh::*;
 
-pub fn export_obj(mesh: Mesh, file_name: &str) -> std::io::Result<()> {
+pub fn export_obj(mesh: Mesh, file_name: String) -> std::io::Result<()> {
     let mut file = File::create(format!("../bin/renders/{}.obj", file_name))?;
     let mut data = Vec::new();
     data.push(format!("# Generated for use in Torus"));

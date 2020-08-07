@@ -10,7 +10,7 @@ pub fn parse_obj<T: BufRead>(input: T) -> Result<Mesh, Error> {
     // Convert to mesh, because RawObj = yucky
     let mut mesh = Mesh::new();
     for p in raw.positions {
-        mesh.add_vertex(Vec3::new(p.0,p.2,p.1)); // Y and Z are swapped round, and we ignore W (p.3)
+        mesh.add_vertex(Vec3::new(p.0 as f64,p.2 as f64,p.1 as f64)); // Y and Z are swapped round, and we ignore W (p.3)
     }
 
     for p in raw.polygons {

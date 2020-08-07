@@ -3,15 +3,17 @@ use crate::parse::parse_obj;
 use std::fs::File;
 use super::module::*;
 
+type Float = f64;
+
 pub struct Wing {
-    pub(crate) angle: f32,
+    pub(crate) _angle: Float,
     pub(crate) modules: Vec<Module>,
 }
 
 impl Wing {
-    pub(crate) fn new(index: usize, radius: f32, module_count: usize, arc: f32) -> Self {
-        let angle = index as f32 * arc;
-        let module_arc = arc / module_count as f32;
+    pub(crate) fn new(index: usize, radius: Float, module_count: usize, arc: Float) -> Self {
+        let angle = index as Float * arc;
+        let module_arc = arc / module_count as Float;
         let mut modules = Vec::new();
         
         let file = File::open(format!("assets/module.obj")).unwrap();
@@ -24,7 +26,7 @@ impl Wing {
             modules.push(module);
         }
         Self {
-            angle,
+            _angle: angle,
             modules,
         }
     }

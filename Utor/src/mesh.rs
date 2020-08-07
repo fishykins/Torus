@@ -1,6 +1,6 @@
 pub use vek::Vec3;
 
-pub type Vertex = Vec3<f32>;
+pub type Vertex = Vec3<f64>;
 pub type Face = Vec<usize>;
 
 #[derive(Clone)]
@@ -25,8 +25,8 @@ impl Mesh {
         }
     }
 
-    pub fn set_name(&mut self, name: &str) {
-        self.name = Some(name.into());
+    pub fn set_name(&mut self, name: String) {
+        self.name = Some(name);
     }
 
     /// Adds a lone vertex to the mesh. Be sure to give him some friends!
@@ -54,7 +54,7 @@ impl Mesh {
     }
 
     /// Normalizes the mesh using given Vec3
-    pub fn normalize(&mut self, offset: Vec3<f32>) {
+    pub fn normalize(&mut self, offset: Vec3<f64>) {
         self.map_verts(|v| v - offset);
     }
 
@@ -81,7 +81,7 @@ impl Mesh {
     }
 
     pub fn name(&self) -> Option<String> {
-        self.name
+        self.name.clone()
     }
 
     pub fn map_verts<F>(&mut self, f: F) where F: Fn(&Vertex) -> Vertex {
