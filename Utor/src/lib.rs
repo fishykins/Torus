@@ -1,4 +1,5 @@
 pub mod mesh;
+pub mod maths;
 pub mod export;
 pub mod parse;
 pub mod primatives;
@@ -7,3 +8,5 @@ pub mod box_collider;
 pub mod bounding_box;
 pub mod growable_box;
 pub mod station;
+pub mod torus_modifier;
+pub mod mesh_modifier;
