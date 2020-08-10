@@ -14,16 +14,16 @@ impl<T> BoundingBox<T> {
     }
 }
 
-impl BoxCollider<i8> for BoundingBox<i8> {
-    fn min(&self) -> Vec3<i8> {
+impl BoxCollider<u32> for BoundingBox<u32> {
+    fn min(&self) -> Vec3<u32> {
         self.bounds.map(|a| a.0)
     }
 
-    fn max(&self) -> Vec3<i8> {
+    fn max(&self) -> Vec3<u32> {
         self.bounds.map(|a| a.1)
     }
 
-    fn contains(&self, other: &dyn BoxCollider<i8>) -> bool {
+    fn contains(&self, other: &dyn BoxCollider<u32>) -> bool {
         let c1 = self.min().x < other.min().x;
         let c2 = self.max().x > other.max().x;
         let c3 = self.min().y < other.min().y;
@@ -34,7 +34,7 @@ impl BoxCollider<i8> for BoundingBox<i8> {
         c1 && c2 && c3 && c4 && c5 && c6
     }
 
-    fn intersects(&self, other: &dyn BoxCollider<i8>) -> bool {
+    fn intersects(&self, other: &dyn BoxCollider<u32>) -> bool {
         let c1 = self.min().x > other.max().x;
         let c2 = self.max().x < other.min().x;
         let c3 = self.min().y > other.max().y;

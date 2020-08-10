@@ -8,13 +8,13 @@ pub enum RoomFactory {
     Marching(usize),
 }
 
-pub fn build_room(start_position: Vec3<i8>, bounds: &dyn BoxCollider<i8>, colliders: &Vec<Room>, factory: RoomFactory) -> Option<Room> {
+pub fn build_room(start_position: Vec3<u32>, bounds: &dyn BoxCollider<u32>, colliders: &Vec<Room>, factory: RoomFactory) -> Option<Room> {
     match factory {
         RoomFactory::Marching(limit) => marching(start_position, bounds, colliders, limit)
     }
 }
 
-fn marching(start_position: Vec3<i8>, bounds: &dyn BoxCollider<i8>, colliders: &Vec<Room>, limit: usize) -> Option<Room> {
+fn marching(start_position: Vec3<u32>, bounds: &dyn BoxCollider<u32>, colliders: &Vec<Room>, limit: usize) -> Option<Room> {
     // Create the room
     let mut room_box = GrowableBox::new(start_position);
     let mut rng = thread_rng();

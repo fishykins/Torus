@@ -14,36 +14,36 @@ pub enum Direction {
 
 #[derive(PartialEq, Clone)]
 pub struct GrowableBox {
-    bounds: Vec3<(i8, i8)>,
+    bounds: Vec3<(u32, u32)>,
 }
 
 impl GrowableBox {
-    pub fn new(pos: Vec3<i8>) -> Self {
+    pub fn new(pos: Vec3<u32>) -> Self {
         Self {
             bounds: pos.zip(pos),
         }
     }
 
-    pub fn pos(&self) -> Vec3<f64> {
-        let min: Vec3<f64> = self.min().map(|z| z as f64);
+    pub fn pos(&self) -> Vec3<u32> {
+        let min: Vec3<u32> = self.min().map(|z| z as u32);
         min + self.size()
     }
 
-    pub fn size(&self) -> Vec3<f64> {
-        let min: Vec3<f64> = self.min().map(|z| z as f64);
-        let max: Vec3<f64> = self.max().map(|z| z as f64);
+    pub fn size(&self) -> Vec3<u32> {
+        let min: Vec3<u32> = self.min().map(|z| z as u32);
+        let max: Vec3<u32> = self.max().map(|z| z as u32);
         max - min
         
     }
 
     pub fn expand(&mut self, direction: &Direction, amount: u8) {
         match direction {
-            Direction::Front => self.bounds.z.1 += amount as i8,
-            Direction::Back => self.bounds.z.0 -= amount as i8,
-            Direction::Right => self.bounds.x.1 += amount as i8,
-            Direction::Left => self.bounds.x.0 -= amount as i8,
-            Direction::Up => self.bounds.y.1 += amount as i8,
-            Direction::Down => self.bounds.y.0 -= amount as i8,
+            Direction::Front => self.bounds.z.1 += amount as u32,
+            Direction::Back => self.bounds.z.0 -= amount as u32,
+            Direction::Right => self.bounds.x.1 += amount as u32,
+            Direction::Left => self.bounds.x.0 -= amount as u32,
+            Direction::Up => self.bounds.y.1 += amount as u32,
+            Direction::Down => self.bounds.y.0 -= amount as u32,
             _ => self.twiddle_thumbs(),
         };
     }
@@ -53,16 +53,16 @@ impl GrowableBox {
     }
 }
 
-impl BoxCollider<i8> for GrowableBox {
-    fn min(&self) -> Vec3<i8> {
+impl BoxCollider<u32> for GrowableBox {
+    fn min(&self) -> Vec3<u32> {
         self.bounds.map(|a| a.0)
     }
 
-    fn max(&self) -> Vec3<i8> {
+    fn max(&self) -> Vec3<u32> {
         self.bounds.map(|a| a.1)
     }
 
-    fn contains(&self, other: &dyn BoxCollider<i8>) -> bool {
+    fn contains(&self, other: &dyn BoxCollider<u32>) -> bool {
         let c1 = self.min().x <= other.min().x;
         let c2 = self.max().x >= other.max().x;
         let c3 = self.min().y <= other.min().y;
@@ -73,7 +73,7 @@ impl BoxCollider<i8> for GrowableBox {
         c1 && c2 && c3 && c4 && c5 && c6
     }
 
-    fn intersects(&self, other: &dyn BoxCollider<i8>) -> bool {
+    fn intersects(&self, other: &dyn BoxCollider<u32>) -> bool {
         let c1 = self.min().x > other.max().x;
         let c2 = self.max().x < other.min().x;
         let c3 = self.min().y > other.max().y;

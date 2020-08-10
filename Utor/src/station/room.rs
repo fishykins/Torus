@@ -15,20 +15,20 @@ impl Room {
     }
 }
 
-impl BoxCollider<i8> for Room {
-    fn min(&self) -> Vec3<i8> {
+impl BoxCollider<u32> for Room {
+    fn min(&self) -> Vec3<u32> {
         self.bounding_box.min()
     }
 
-    fn max(&self) -> Vec3<i8> {
+    fn max(&self) -> Vec3<u32> {
         self.bounding_box.max()
     }
 
-    fn contains(&self, other: &dyn BoxCollider<i8>) -> bool {
+    fn contains(&self, other: &dyn BoxCollider<u32>) -> bool {
         self.bounding_box.contains(other)
     }
 
-    fn intersects(&self, other: &dyn BoxCollider<i8>) -> bool {
+    fn intersects(&self, other: &dyn BoxCollider<u32>) -> bool {
         self.bounding_box.intersects(other)
     }
 }

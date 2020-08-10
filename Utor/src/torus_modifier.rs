@@ -26,7 +26,7 @@ pub struct TorusModifier {
 }
 
 impl RPos {
-    pub fn new(x: Float, y: Float, arc: Float) -> Self {
+    pub fn new(x: f64, y: f64, arc: f64) -> Self {
         Self {
             arc: maths::clamp(0., 1., arc).into(),
             y: maths::clamp(0., 1., y),
