@@ -25,9 +25,9 @@ pub struct TorusModifier<T> where T: GeoNum {
 impl<T> RPos<T> where T: GeoNum {
     pub fn new(x: T, y: T, arc: T) -> Self {
         Self {
-            arc: maths::clamp(T::zero(), T::one(), arc),
-            y: maths::clamp(T::zero(), T::one(), y),
-            x: maths::clamp(T::zero(), T::one(), x),
+            arc: maths::clamp(arc, T::zero(), T::one()),
+            y: maths::clamp(y, T::zero(), T::one()),
+            x: maths::clamp(x, T::zero(), T::one()),
         }
     }
 }
@@ -84,7 +84,7 @@ impl<T> TorusModifier<T> where T: GeoNum {
 
     pub fn ring_to_world(&self, vertex: &Vertex<T>) -> Vertex<T> {
         let modifier = RPos::<T>::from(*vertex);
-        let theta = maths::lerp(self.angle -self.arc / 2., self.angle + self.arc / 2., maths::clamp(0.,1., modifier.arc.to_f64().unwrap()));
+        let theta = maths::lerp(self.angle -self.arc / 2., self.angle + self.arc / 2., maths::clamp(modifier.arc.to_f64().unwrap(), 0.,1.));
         let r = self.arm + (self.height * 2. * modifier.y.to_f64().unwrap()) / 2.;
         let x = T::from_f64(maths::lerp(-self.width / 2., self.width / 2., modifier.x.to_f64().unwrap())).unwrap();
         let y = self.origin.x + T::from_f64(r * theta.cos()).unwrap();

@@ -100,7 +100,7 @@ impl Module {
     }
 
     pub fn generate_rooms_cellular(&mut self, percent_fill: usize) {
-        let fill = (maths::clamp(0., 100., percent_fill as f32)) as Int;
+        let fill = (maths::clamp(percent_fill, 0, 100)) as Int;
         let mut rng = thread_rng();
         let mut grid = GridMap::<bool, Int>::new(Vec3::zero(), Vec3::new(GRID_SIZE.0, GRID_SIZE.1, GRID_SIZE.2));
         for x in 0..GRID_SIZE.0 {
@@ -110,7 +110,7 @@ impl Module {
                     let number = rng.gen_range(0, 100);
                     let is_room = number < fill;
                     if is_room {
-                        grid.add(is_room, pos);
+                        let _ = grid.add(is_room, pos).unwrap();
                     }
                 }
             }
@@ -140,7 +140,7 @@ impl Module {
             let pos = grid_object.position();
             if *is_room {
                 if grid.neighbors(pos, false).len() > amount {
-                    new_grid.add(true, pos);
+                    new_grid.add(true, pos).unwrap();
                 }
             }
         }
@@ -203,6 +203,7 @@ impl Module {
 #[cfg(test)]
 mod tests {
     use crate::station::module::Module;
+    use corale::mesh::Mesh;
     use corale::wavefront::*;
     use std::io::BufReader;
     use std::fs::File;
@@ -213,10 +214,10 @@ mod tests {
         
         let file = File::open(format!("assets/module.obj")).unwrap();
         let input = BufReader::new(file);
-        let mesh = parse(input).unwrap();
+        let mesh: Mesh<f64> = parse(input).unwrap();
         let module = Module::new(0, angle, 800., &mesh);
         let build = module.build();
-        let file_name = "a_test".to_string();
+        let file_name = "../bin/renders/a_test".to_string();
         export(&build, file_name).unwrap();
     }
 }
