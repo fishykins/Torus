@@ -1,5 +1,5 @@
 use super::wing::Wing;
-use crate::export::*;
+use corale::wavefront::export;
 
 type Float = f64;
 
@@ -29,7 +29,7 @@ impl Station {
             for module in &w.modules {
                 let mesh = module.build();
                 let file_name = mesh.name().unwrap();
-                export_obj(mesh, file_name).unwrap();
+                export(&mesh, file_name).unwrap();
             }
         }
     }

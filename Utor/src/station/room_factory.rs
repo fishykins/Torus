@@ -1,5 +1,6 @@
+use corale::geom::{BoxCollider};
+use corale::core::{Direction, GridNum};
 use crate::station::room::Room;
-use crate::box_collider::BoxCollider;
 use crate::growable_box::*;
 use vek::Vec3;
 use rand::prelude::*;
@@ -8,13 +9,13 @@ pub enum RoomFactory {
     Marching(usize),
 }
 
-pub fn build_room(start_position: Vec3<u32>, bounds: &dyn BoxCollider<u32>, colliders: &Vec<Room>, factory: RoomFactory) -> Option<Room> {
+pub fn build_room<T>(start_position: Vec3<T>, bounds: &dyn BoxCollider<T>, colliders: &Vec<Room<T>>, factory: RoomFactory) -> Option<Room<T>> where T: GridNum  {
     match factory {
         RoomFactory::Marching(limit) => marching(start_position, bounds, colliders, limit)
     }
 }
 
-fn marching(start_position: Vec3<u32>, bounds: &dyn BoxCollider<u32>, colliders: &Vec<Room>, limit: usize) -> Option<Room> {
+fn marching<T>(start_position: Vec3<T>, bounds: &dyn BoxCollider<T>, colliders: &Vec<Room<T>>, limit: usize) -> Option<Room<T>> where T: GridNum {
     // Create the room
     let mut room_box = GrowableBox::new(start_position);
     let mut rng = thread_rng();
@@ -31,7 +32,7 @@ fn marching(start_position: Vec3<u32>, bounds: &dyn BoxCollider<u32>, colliders:
             //Expand in the current direction, if possible
             expansions -= 1;
             let mut room_clone = room_box.clone();
-            room_clone.expand(&direction, 1);
+            room_clone.expand(&direction, T::one());
 
             if bounds.contains(&room_clone) {
                 //Check we dont intersect another room
@@ -55,16 +56,9 @@ fn marching(start_position: Vec3<u32>, bounds: &dyn BoxCollider<u32>, colliders:
 
         if change_direction {
             expansions = rng.gen_range(0, limit);
-            match direction.clone() {
-                Direction::Left => direction = Direction::Right,
-                Direction::Right => direction = Direction::Up,
-                Direction::Up => direction = Direction::Down,
-                Direction::Down => direction = Direction::Front,
-                Direction::Front => direction = Direction::Back,
-                Direction::Back | Direction::None => {
-                    //There are no more directions to look in, stop
-                    expanding = false;
-                },
+            direction = direction.next();
+            if direction.is_none() {
+                expanding = false;
             }
         }
     }

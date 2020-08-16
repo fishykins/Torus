@@ -1,20 +1,20 @@
-use vek::{Vec2};
+use vek::{Vec2, Vec3};
+use rand::prelude::*;
+use corale::core::*;
+use corale::mesh::*;
+use corale::grid::*;
+use corale::geom::*;
+use crate::primatives::*;
 use crate::station::{room_factory::*, room::Room};
 use crate::torus_modifier::TorusModifier;
-use crate::mesh_modifier::MeshModifier;
-use crate::mesh::*;
-use crate::maths;
-use crate::grid::*;
-use crate::primatives::*;
-use crate::{box_collider::BoxCollider, bounding_box::BoundingBox, growable_box::{GrowableBox}};
-use rand::prelude::*;
+use crate::GrowableBox;
 
 const LENGTH_K: Float = 3.;
 const WIDTH_K: Float = 1.;
 const HEIGHT_K: Float = 1.;
 
-const AREA_INNER: (f64,f64,f64) = (0.5, 0.5, 1.);
-const GRID_SIZE: (usize,usize,usize) = (8,8,32);
+const AREA_INNER: (Float,Float,Float) = (0.5, 0.5, 1.);
+const GRID_SIZE: (Int,Int,Int) = (8,8,32);
 
 const ROOM_COUNT: usize = 10;
 const ROOM_SIZE_LIMMIT: usize = 3;
@@ -25,14 +25,15 @@ const ROOM_SMOOTHING: usize = 2;
 const ROOM_NEIGHBOR_THRESHHOLD: usize = 3;
 
 type Float = f64;
+type Int = i64;
 
 #[derive(Clone)]
 pub struct Module {
     index: usize,
-    torus_mod: TorusModifier,
-    bounds: BoundingBox<u32>, 
-    mesh: Mesh,
-    rooms: Vec<Room>,
+    torus_mod: TorusModifier<Float>,
+    bounds: BoundingBox<Int>, 
+    mesh: Mesh<Float>,
+    rooms: Vec<Room<Int>>,
 }
 
 
@@ -41,7 +42,7 @@ impl Module {
     /// theta: the angle size of the segment's arc
     /// radius: the radius from the ring center to the middle of the module
     /// mesh: parent mesh to clone from. 
-    pub fn new(index: usize, arc: Float, radius: Float, mesh: &Mesh) -> Self {
+    pub fn new(index: usize, arc: Float, radius: Float, mesh: &Mesh<Float>) -> Self {
         let angle = index as Float * arc;
         let mut torus_mod = TorusModifier::new(Vec2::zero(), angle, radius, arc, 0., 0.);
         let k = torus_mod.length() / LENGTH_K;
@@ -54,7 +55,7 @@ impl Module {
             index,
             rooms: Vec::new(),
             torus_mod,
-            bounds: BoundingBox::new(Vec3::zero(), Vec3::new(GRID_SIZE.0 as u32, GRID_SIZE.1 as u32, GRID_SIZE.2 as u32)),
+            bounds: BoundingBox::new(Vec3::zero(), Vec3::new(GRID_SIZE.0, GRID_SIZE.1, GRID_SIZE.2)),
             mesh: new_mesh,
         };
 
@@ -67,7 +68,7 @@ impl Module {
         for x in 0..GRID_SIZE.0 {
             for y in 0..GRID_SIZE.1 {
                 for z in 0..GRID_SIZE.2 {
-                    let pos: Vec3<u32> = Vec3::new(x as u32, y as u32,z  as u32);
+                    let pos: Vec3<Int> = Vec3::new(x, y, z);
                     let new_room = Room::new(GrowableBox::new(pos));
                     self.rooms.push(new_room);
                 }
@@ -88,7 +89,7 @@ impl Module {
             let x = rng.gen_range(0, GRID_SIZE.0);
             let y = rng.gen_range(0, GRID_SIZE.1);
             let z = rng.gen_range(0, GRID_SIZE.2);
-            let pos: Vec3<u32> = Vec3::new(x as u32, y as u32,z  as u32);
+            let pos: Vec3<Int> = Vec3::new(x, y, z);
 
             let room = build_room(pos, &self.bounds, &self.rooms, RoomFactory::Marching(ROOM_SIZE_LIMMIT));
             if room.is_some() {
@@ -99,13 +100,13 @@ impl Module {
     }
 
     pub fn generate_rooms_cellular(&mut self, percent_fill: usize) {
-        let fill = (maths::clamp(0., 100., percent_fill as f32)) as u32;
+        let fill = (maths::clamp(0., 100., percent_fill as f32)) as Int;
         let mut rng = thread_rng();
-        let mut grid = Grid3::<bool, u32>::new(Vec3::new(GRID_SIZE.0 as u32, GRID_SIZE.1 as u32, GRID_SIZE.2 as u32));
+        let mut grid = GridMap::<bool, Int>::new(Vec3::zero(), Vec3::new(GRID_SIZE.0, GRID_SIZE.1, GRID_SIZE.2));
         for x in 0..GRID_SIZE.0 {
             for y in 0..GRID_SIZE.1 {
                 for z in 0..GRID_SIZE.2 {
-                    let pos: Vec3<u32> = Vec3::new(x as u32, y as u32,z  as u32);
+                    let pos: Vec3<Int> = Vec3::new(x, y, z);
                     let number = rng.gen_range(0, 100);
                     let is_room = number < fill;
                     if is_room {
@@ -122,21 +123,23 @@ impl Module {
 
         grid = self.smooth_grid(grid, 1);
 
-        for (_, item) in grid.items().iter().enumerate() {
-            if *item.0 {
-                let new_room = Room::new(GrowableBox::new(item.1));
+        for object in grid.items().iter() {
+            if *object.item() {
+                let new_room = Room::new(GrowableBox::new(object.position()));
                 self.rooms.push(new_room);
             }
         }
     }
 
-    fn smooth_grid(&mut self, grid: Grid3<bool, u32>, amount: usize) -> Grid3<bool, u32> {
+    fn smooth_grid(&mut self, grid: GridMap<bool, Int>, amount: usize) -> GridMap<bool, Int> {
 
-        let mut new_grid = grid.clone_empty();
+        let mut new_grid = GridMap::<bool, Int>::from_boundingbox(self.bounds);
 
-        for (is_room, pos) in grid.items() {
+        for grid_object in grid.items() {
+            let is_room = grid_object.item();
+            let pos = grid_object.position();
             if *is_room {
-                if grid.cross_neighbors(pos, |n| *n).len() > amount {
+                if grid.neighbors(pos, false).len() > amount {
                     new_grid.add(true, pos);
                 }
             }
@@ -144,7 +147,7 @@ impl Module {
         new_grid
     }
 
-    fn rooms_to_mesh(&self, mesh: &mut Mesh) {
+    fn rooms_to_mesh(&self, mesh: &mut Mesh<Float>) {
         let step = Vec3::new(
             AREA_INNER.0 / GRID_SIZE.0 as f64, 
             AREA_INNER.1 / GRID_SIZE.1 as f64, 
@@ -173,18 +176,18 @@ impl Module {
         }
     }
 
-    pub fn mesh(&self) -> &Mesh {
+    pub fn mesh(&self) -> &Mesh<Float> {
         &self.mesh
     }
 
-    pub fn mesh_mut(&mut self) -> &mut Mesh {
+    pub fn mesh_mut(&mut self) -> &mut Mesh<Float> {
         &mut self.mesh
     }
 
-    pub fn build(&self) -> Mesh {
+    pub fn build(&self) -> Mesh<Float> {
         let mut mesh = self.mesh.clone();
         self.rooms_to_mesh(&mut mesh);
-        mesh = self.torus_mod.apply(&mesh);
+        self.torus_mod.apply(&mut mesh);
         mesh.invert_z();
         mesh
     }
@@ -200,8 +203,7 @@ impl Module {
 #[cfg(test)]
 mod tests {
     use crate::station::module::Module;
-    use crate::parse::parse_obj;
-    use crate::export::export_obj;
+    use corale::wavefront::*;
     use std::io::BufReader;
     use std::fs::File;
     
@@ -211,10 +213,10 @@ mod tests {
         
         let file = File::open(format!("assets/module.obj")).unwrap();
         let input = BufReader::new(file);
-        let mesh = parse_obj(input).unwrap();
+        let mesh = parse(input).unwrap();
         let module = Module::new(0, angle, 800., &mesh);
         let build = module.build();
         let file_name = "a_test".to_string();
-        export_obj(build, file_name).unwrap();
+        export(&build, file_name).unwrap();
     }
 }

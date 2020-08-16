@@ -1,5 +1,5 @@
 use std::io::BufReader;
-use crate::parse::parse_obj;
+use corale::wavefront::parse;
 use std::fs::File;
 use super::module::*;
 
@@ -18,7 +18,7 @@ impl Wing {
         
         let file = File::open(format!("assets/module.obj")).unwrap();
         let input = BufReader::new(file);
-        let mesh = parse_obj(input).unwrap();
+        let mesh = parse(input).unwrap();
 
         // Build the wing's modules
         for m in 0..module_count {
