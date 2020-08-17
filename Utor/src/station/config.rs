@@ -7,6 +7,7 @@ pub struct Config {
     pub station: StationConfig,
     pub wings: WingConfig,
     pub modules: ModuleConfig,
+    pub rooms: RoomConfig,
     pub humans: HumanConfig,
 }
 
@@ -28,6 +29,11 @@ pub struct ModuleConfig {
     /// Width & height of the module in proportion to the length (which is calculated based on numerous factors)
     width: f64,
     height: f64,
+}
+
+#[derive(Deserialize, Clone)]
+pub struct RoomConfig {
+    min_width: usize,
 }
 
 #[derive(Deserialize, Clone)]
@@ -66,6 +72,12 @@ impl ModuleConfig {
     }
     pub fn dimensions(&self) -> Vec2<f64> {
         Vec2::new(self.width, self.height)
+    }
+}
+
+impl RoomConfig {
+    pub fn min_width(&self) -> usize {
+        self.min_width
     }
 }
 

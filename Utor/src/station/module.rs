@@ -5,7 +5,7 @@ use corale::mesh::*;
 use corale::grid::*;
 use corale::geom::*;
 use crate::primatives::*;
-use crate::station::{room_factory::*, room::Room};
+use crate::station::{generation::room_factory::*, room::Room};
 use crate::torus_modifier::TorusModifier;
 use crate::GrowableBox;
 use super::config::Config;
@@ -47,7 +47,7 @@ impl Module {
 
         // Calculate the dimensions of inahabitable space
         let h: i64 = (torus_mod.height() / cfg.humans.dimensions().y).floor() as i64;
-        let w: i64 = (torus_mod.width() / cfg.humans.dimensions().x).floor() as i64;
+        let w: i64 = (torus_mod.width() / cfg.humans.dimensions().x / cfg.rooms.min_width() as f64).floor() as i64;
         let d: i64 = 32;
 
         let mut me = Self {
@@ -231,9 +231,3 @@ mod tests {
         export(&build, file_name).unwrap();
     }
 }
-
-
-//bounds: 152, 38, 32
-
-//59, 33, 7 -> 342 045
-//27, 33, 8 -> 157 214
