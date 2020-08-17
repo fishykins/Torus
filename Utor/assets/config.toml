@@ -1,0 +1,15 @@
+[station]
+wings = 6
+radius = 800
+
+[wings]
+modules = 3
+
+[modules]
+rooms = 20
+width = 0.33
+height = 0.33
+
+[humans]
+height = 2.4
+width = 0.6

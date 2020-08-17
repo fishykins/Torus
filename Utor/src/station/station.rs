@@ -1,4 +1,5 @@
 use super::wing::Wing;
+use super::config::*;
 use corale::wavefront::export;
 
 type Float = f64;
@@ -8,14 +9,14 @@ pub struct Station {
 }
 
 impl Station {
-    pub fn new(radius: Float, wing_count: usize, moudles_per_wing: usize) -> Self {
+    pub fn new(cfg: Config) -> Self {
         // cache a few resued vars
-        let wing_angle = (2. * std::f64::consts::PI as Float) / wing_count as Float;
+        let wing_angle = (2. * std::f64::consts::PI as Float) / cfg.station.wing_count() as Float;
         let mut wings = Vec::new();
 
         // Build each wing of the station
-        for i in 0..wing_count {
-            let wing = Wing::new(i, radius, moudles_per_wing, wing_angle);
+        for i in 0..cfg.station.wing_count() {
+            let wing = Wing::new(i, wing_angle, &cfg);
             wings.push(wing);
         }
 
@@ -38,10 +39,11 @@ impl Station {
 #[cfg(test)]
 mod tests {
     use crate::station::station::Station;
+    use crate::station::config::Config;
     
     #[test]
     fn station_test() {
-        let station = Station::new(800., 6, 3);
+        let station = Station::new(Config::import("assets/config.toml"));
         station.build();
     }
 }

@@ -8,19 +8,13 @@ use crate::primatives::*;
 use crate::station::{room_factory::*, room::Room};
 use crate::torus_modifier::TorusModifier;
 use crate::GrowableBox;
-
-const LENGTH_K: Float = 3.;
-const WIDTH_K: Float = 1.;
-const HEIGHT_K: Float = 1.;
+use super::config::Config;
 
 const AREA_INNER: (Float,Float,Float) = (0.5, 0.5, 1.);
-const GRID_SIZE: (Int,Int,Int) = (8,8,32);
 
 const ROOM_COUNT: usize = 10;
 const ROOM_SIZE_LIMMIT: usize = 3;
 
-
-const ROOM_FILL: usize = 65;
 const ROOM_SMOOTHING: usize = 2;
 const ROOM_NEIGHBOR_THRESHHOLD: usize = 3;
 
@@ -42,32 +36,41 @@ impl Module {
     /// theta: the angle size of the segment's arc
     /// radius: the radius from the ring center to the middle of the module
     /// mesh: parent mesh to clone from. 
-    pub fn new(index: usize, arc: Float, radius: Float, mesh: &Mesh<Float>) -> Self {
+    pub fn new(index: usize, arc: Float, cfg: &Config, mesh: &Mesh<Float>) -> Self {
         let angle = index as Float * arc;
-        let mut torus_mod = TorusModifier::new(Vec2::zero(), angle, radius, arc, 0., 0.);
-        let k = torus_mod.length() / LENGTH_K;
-        torus_mod.set_size(k * WIDTH_K, k * HEIGHT_K);
+        let mut torus_mod = TorusModifier::new(Vec2::zero(), angle, cfg.station.radius(), arc, 0., 0.);
+        let length = torus_mod.length();
+        torus_mod.set_size(length * cfg.modules.dimensions().x, length * cfg.modules.dimensions().y);
         let mut new_mesh = mesh.clone();
         let name = format!("module_{}", index);
         new_mesh.set_name(name);
+
+        // Calculate the dimensions of inahabitable space
+        let h: i64 = (torus_mod.height() / cfg.humans.dimensions().y).floor() as i64;
+        let w: i64 = (torus_mod.width() / cfg.humans.dimensions().x).floor() as i64;
+        let d: i64 = 32;
 
         let mut me = Self {
             index,
             rooms: Vec::new(),
             torus_mod,
-            bounds: BoundingBox::new(Vec3::zero(), Vec3::new(GRID_SIZE.0, GRID_SIZE.1, GRID_SIZE.2)),
+            bounds: BoundingBox::new(Vec3::zero(), Vec3::new(w, h, d)),
             mesh: new_mesh,
         };
 
-        me.generate_rooms_cellular(ROOM_FILL);
+        let room_fill = cfg.modules.room_count() as f64 / me.bounds.area() as f64;
+
+        println!("bounds: {}, {}, {}", me.bounds.width(), me.bounds.height(), me.bounds.depth());
+
+        me.generate_rooms_cellular(room_fill.ceil() as usize);
         me
     }
 
     /// Builds a room in every single tile. Debug use only!
     pub fn generate_all_rooms(&mut self) {
-        for x in 0..GRID_SIZE.0 {
-            for y in 0..GRID_SIZE.1 {
-                for z in 0..GRID_SIZE.2 {
+        for x in 0..self.bounds.width() {
+            for y in 0..self.bounds.height() {
+                for z in 0..self.bounds.depth() {
                     let pos: Vec3<Int> = Vec3::new(x, y, z);
                     let new_room = Room::new(GrowableBox::new(pos));
                     self.rooms.push(new_room);
@@ -86,9 +89,9 @@ impl Module {
             // Individual room starts here
             atempts += 1;
             // Get random position
-            let x = rng.gen_range(0, GRID_SIZE.0);
-            let y = rng.gen_range(0, GRID_SIZE.1);
-            let z = rng.gen_range(0, GRID_SIZE.2);
+            let x = rng.gen_range(0, self.bounds.width());
+            let y = rng.gen_range(0, self.bounds.height());
+            let z = rng.gen_range(0, self.bounds.depth());
             let pos: Vec3<Int> = Vec3::new(x, y, z);
 
             let room = build_room(pos, &self.bounds, &self.rooms, RoomFactory::Marching(ROOM_SIZE_LIMMIT));
@@ -102,15 +105,19 @@ impl Module {
     pub fn generate_rooms_cellular(&mut self, percent_fill: usize) {
         let fill = (maths::clamp(percent_fill, 0, 100)) as Int;
         let mut rng = thread_rng();
-        let mut grid = GridMap::<bool, Int>::new(Vec3::zero(), Vec3::new(GRID_SIZE.0, GRID_SIZE.1, GRID_SIZE.2));
-        for x in 0..GRID_SIZE.0 {
-            for y in 0..GRID_SIZE.1 {
-                for z in 0..GRID_SIZE.2 {
-                    let pos: Vec3<Int> = Vec3::new(x, y, z);
-                    let number = rng.gen_range(0, 100);
-                    let is_room = number < fill;
-                    if is_room {
-                        let _ = grid.add(is_room, pos).unwrap();
+        let mut grid = GridMap::<bool, Int>::new(Vec3::zero(), Vec3::new(self.bounds.width(), self.bounds.height(), self.bounds.depth()));
+        for x in 0..self.bounds.width() {
+            for y in 0..self.bounds.height() {
+                for z in 0..self.bounds.depth() {
+                    if rng.gen_range(0, 100) < fill {
+                        let pos: Vec3<Int> = Vec3::new(x, y, z);
+  
+                        let res = grid.add(true, pos);
+                        if res.is_err() {
+                            let i = grid.index(pos).unwrap();
+                            let pos_in_place = grid.item(i).unwrap().position();
+                            println!("pos {} failed: {} is already at index {}", pos, pos_in_place, i.index());
+                        }
                     }
                 }
             }
@@ -118,10 +125,10 @@ impl Module {
 
         //Smooting
         for _ in 0..ROOM_SMOOTHING {
-            grid = self.smooth_grid(grid, ROOM_NEIGHBOR_THRESHHOLD);
+            //grid = self.smooth_grid(grid, ROOM_NEIGHBOR_THRESHHOLD);
         }
 
-        grid = self.smooth_grid(grid, 1);
+        //grid = self.smooth_grid(grid, 1);
 
         for object in grid.items().iter() {
             if *object.item() {
@@ -149,9 +156,9 @@ impl Module {
 
     fn rooms_to_mesh(&self, mesh: &mut Mesh<Float>) {
         let step = Vec3::new(
-            AREA_INNER.0 / GRID_SIZE.0 as f64, 
-            AREA_INNER.1 / GRID_SIZE.1 as f64, 
-            AREA_INNER.2 / GRID_SIZE.2 as f64
+            AREA_INNER.0 / self.bounds.width() as f64, 
+            AREA_INNER.1 / self.bounds.height() as f64, 
+            AREA_INNER.2 / self.bounds.depth() as f64
         );
 
         let offset = Vec3::new(
@@ -203,6 +210,7 @@ impl Module {
 #[cfg(test)]
 mod tests {
     use crate::station::module::Module;
+    use crate::station::config::*;
     use corale::mesh::Mesh;
     use corale::wavefront::*;
     use std::io::BufReader;
@@ -210,14 +218,22 @@ mod tests {
     
     #[test]
     fn module_test() {
-        let angle = 2. * std::f64::consts::PI / 6. / 3.;
+        let cfg = Config::import("assets/config.toml");
+        let angle = 2. * std::f64::consts::PI / cfg.station.wing_count() as f64 / cfg.wings.module_count()  as f64;
         
         let file = File::open(format!("assets/module.obj")).unwrap();
         let input = BufReader::new(file);
         let mesh: Mesh<f64> = parse(input).unwrap();
-        let module = Module::new(0, angle, 800., &mesh);
+        
+        let module = Module::new(0, angle, &cfg, &mesh);
         let build = module.build();
         let file_name = "../bin/renders/a_test".to_string();
         export(&build, file_name).unwrap();
     }
 }
+
+
+//bounds: 152, 38, 32
+
+//59, 33, 7 -> 342 045
+//27, 33, 8 -> 157 214

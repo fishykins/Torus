@@ -2,6 +2,7 @@ use std::io::BufReader;
 use corale::wavefront::parse;
 use std::fs::File;
 use super::module::*;
+use super::config::Config;
 
 type Float = f64;
 
@@ -11,9 +12,9 @@ pub struct Wing {
 }
 
 impl Wing {
-    pub(crate) fn new(index: usize, radius: Float, module_count: usize, arc: Float) -> Self {
+    pub(crate) fn new(index: usize, arc: Float, cfg: &Config) -> Self {
         let angle = index as Float * arc;
-        let module_arc = arc / module_count as Float;
+        let module_arc = arc / cfg.wings.module_count() as Float;
         let mut modules = Vec::new();
         
         let file = File::open(format!("assets/module.obj")).unwrap();
@@ -21,8 +22,8 @@ impl Wing {
         let mesh = parse(input).unwrap();
 
         // Build the wing's modules
-        for m in 0..module_count {
-            let module = Module::new(3 * index + m, module_arc, radius, &mesh);
+        for m in 0..cfg.wings.module_count() {
+            let module = Module::new(3 * index + m, module_arc, &cfg, &mesh);
             modules.push(module);
         }
         Self {
