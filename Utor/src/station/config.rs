@@ -1,4 +1,4 @@
-use vek::Vec2;
+use vek::{Vec2, Vec3};
 use serde::Deserialize;
 use std::fs;
 
@@ -29,6 +29,7 @@ pub struct ModuleConfig {
     /// Width & height of the module in proportion to the length (which is calculated based on numerous factors)
     width: f64,
     height: f64,
+    inner_space: [f64; 3],
 }
 
 #[derive(Deserialize, Clone)]
@@ -72,6 +73,10 @@ impl ModuleConfig {
     }
     pub fn dimensions(&self) -> Vec2<f64> {
         Vec2::new(self.width, self.height)
+    }
+
+    pub fn inner_space(&self) -> Vec3<f64> {
+        Vec3::new(self.inner_space[0], self.inner_space[1], self.inner_space[2])
     }
 }
 

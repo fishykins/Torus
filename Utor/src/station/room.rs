@@ -1,22 +1,21 @@
-use corale::geom::{BoxCollider, Cube};
-use corale::core::{GridNum};
-use crate::GrowableBox;
+use corale::geom::{BoxCollider, Cube, BoundingBox};
+use corale::core::{OrdNum};
 use vek::Vec3;
 
 #[derive(Clone)]
-pub struct Room<T> where T: GridNum {
-    pub bounding_box: GrowableBox<T>,
+pub struct Room<T> where T: OrdNum {
+    pub bounding_box: BoundingBox<T>,
 }
 
-impl<T> Room<T> where T: GridNum {
-    pub fn new(bounding_box: GrowableBox<T>) -> Self {
+impl<T> Room<T> where T: OrdNum {
+    pub fn new(bounding_box: BoundingBox<T>) -> Self {
         Self {
             bounding_box,
         }
     }
 }
 
-impl<T> Cube<T> for Room<T> where T: GridNum {
+impl<T> Cube<T> for Room<T> where T: OrdNum {
     fn min(&self) -> Vec3<T> {
         self.bounding_box.min()
     }
@@ -26,7 +25,7 @@ impl<T> Cube<T> for Room<T> where T: GridNum {
     }
 }
 
-impl<T> BoxCollider<T> for Room<T> where T: GridNum {
+impl<T> BoxCollider<T> for Room<T> where T: OrdNum {
     fn contains(&self, other: &dyn Cube<T>) -> bool {
         self.bounding_box.contains(other)
     }
