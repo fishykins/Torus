@@ -1,12 +1,15 @@
 use corale::core::GeoNum;
 use corale::geom::Torus as CoraleTorus;
 use vek::Vec3;
-use super::{Arc, MPos, TPos};
+use super::{Arc, TPos, TBounds};
 
 pub struct Torus<T> where T: GeoNum {
     major: T,
     minor: T,
-    pos: Vec3<T>
+    pos: Vec3<T>,
+    circumference: T,
+    circumference_outer: T,
+    circumference_inner: T,
 }
 
 impl<T> CoraleTorus<T> for Torus<T> where T: GeoNum {
@@ -25,10 +28,17 @@ impl<T> CoraleTorus<T> for Torus<T> where T: GeoNum {
 
 impl<T> Torus<T> where T: GeoNum {
     pub fn new(major: T, minor: T, pos: Vec3<T>) -> Self {
+        let pi2 = T::from_f64(std::f64::consts::PI * 2.).unwrap();
+        let circumference = pi2 * (major);
+        let circumference_outer = pi2 * (major + minor);
+        let circumference_inner = pi2 * (major - minor);
         Self {
             major,
             minor,
             pos,
+            circumference,
+            circumference_outer,
+            circumference_inner,
         }
     }
 
@@ -43,14 +53,7 @@ impl<T> Torus<T> where T: GeoNum {
         Vec3::new(x, y, pos.x) + self.pos
     }
 
-    /// gets the flat dimensions of the given arc
-    pub fn arc_bounds(&self, arc: &Arc<T>) {
+    pub fn mbounds<'a>(&self, arc: &'a Arc<T>) {
 
-    }
-
-    pub fn arc_to_world(&self, arc: &Arc<T>, pos: MPos<T>, clamp: bool) {
-        // get the arc bounds
-
-        // inverse lerp the MPos into bounds, and clamp if nescisary
     }
 }
