@@ -21,6 +21,6 @@ impl Config {
 
 
 #[test]
-fn station_config_test() {
-    let cfg = Config::import("assets/World.toml");
+fn config_test() {
+    Config::import("assets/World.toml");
 }

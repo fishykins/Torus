@@ -1,5 +1,4 @@
 use serde::Deserialize;
-use num::FromPrimitive;
 use corale::core::OrdNum;
 
 #[derive(Deserialize, Clone)]

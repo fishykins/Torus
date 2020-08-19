@@ -4,36 +4,36 @@ mod module;
 pub use station::Station;
 pub use module::Module;
 
-struct TestTorus {
-    major: usize,
-    minor: usize,
-}
+// struct TestTorus {
+//     major: usize,
+//     minor: usize,
+// }
 
-struct TestMoudle<'a> {
-    torus: &'a TestTorus,
-}
+// struct TestMoudle<'a> {
+//     torus: &'a TestTorus,
+// }
 
-struct TestStation<'a> {
-    torus: TestTorus,
-    modules: Vec<TestMoudle<'a>>,
-}
+// struct TestStation<'a> {
+//     torus: TestTorus,
+//     modules: Vec<TestMoudle<'a>>,
+// }
 
-impl<'a> TestStation<'a> {
-    fn new() {
-        let torus = TestTorus {
-            major: 12,
-            minor: 2,
-        };
+// impl<'a> TestStation<'a> {
+//     fn new() {
+//         let torus = TestTorus {
+//             major: 12,
+//             minor: 2,
+//         };
 
-        let mut station = TestStation {
-            torus,
-            modules: Vec::new(),
-        };
+//         let mut station = TestStation {
+//             torus,
+//             modules: Vec::new(),
+//         };
 
-        let module = TestMoudle {
-            torus: &station.torus,
-        };
+//         let module = TestMoudle {
+//             torus: &station.torus,
+//         };
 
-        station.modules.push(module);
-    }
-}
+//         station.modules.push(module);
+//     }
+// }
