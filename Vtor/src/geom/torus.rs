@@ -1,15 +1,13 @@
-use corale::core::GeoNum;
+use corale::core::{GeoNum, maths};
 use corale::geom::Torus as CoraleTorus;
+use corale::geom::{BoundingBox};
 use vek::Vec3;
-use super::{Arc, TPos, TBounds};
+use super::{Arc, TPos};
 
 pub struct Torus<T> where T: GeoNum {
     major: T,
     minor: T,
     pos: Vec3<T>,
-    circumference: T,
-    circumference_outer: T,
-    circumference_inner: T,
 }
 
 impl<T> CoraleTorus<T> for Torus<T> where T: GeoNum {
@@ -28,22 +26,30 @@ impl<T> CoraleTorus<T> for Torus<T> where T: GeoNum {
 
 impl<T> Torus<T> where T: GeoNum {
     pub fn new(major: T, minor: T, pos: Vec3<T>) -> Self {
-        let pi2 = T::from_f64(std::f64::consts::PI * 2.).unwrap();
-        let circumference = pi2 * (major);
-        let circumference_outer = pi2 * (major + minor);
-        let circumference_inner = pi2 * (major - minor);
         Self {
             major,
             minor,
             pos,
-            circumference,
-            circumference_outer,
-            circumference_inner,
         }
     }
 
+    /// helper function to ensure all length calculations are the same
+    pub fn arc_length(&self, arc: &Arc<T>) -> T {
+        arc.circ() * self.major
+    }
+
+    /// makes a BoundingBox that represents the given arc in flat projection. Useful for working with real units of measurment prior to being normalized
+    pub fn make_arc_bbox(&self, arc: &Arc<T>) -> BoundingBox<T> {
+        let width = arc.size().x;
+        let height = arc.size().y;
+        let depth = self.arc_length(arc);
+        let max = Vec3::new(width, height, depth);
+        BoundingBox::new(Vec3::zero(), max)
+
+    }
+
     /// takes a TPos and converts it to world-space
-    pub fn world_pos(&self, pos: TPos<T>) -> Vec3<T> {
+    pub fn tpos_to_world(&self, pos: TPos<T>) -> Vec3<T> {
         let t = pos.theta.to_f64().unwrap();
         let sin_t = T::from_f64(t.sin()).unwrap();
         let cos_t = T::from_f64(t.cos()).unwrap();
@@ -53,7 +59,20 @@ impl<T> Torus<T> where T: GeoNum {
         Vec3::new(x, y, pos.x) + self.pos
     }
 
-    pub fn mbounds<'a>(&self, arc: &'a Arc<T>) {
+    pub fn vec3_to_world(&self, pos: Vec3<T>, arc: &Arc<T>) -> Vec3<T> {
 
+        // convert z to theta
+        let zi = maths::inverse_lerp(T::zero(), self.arc_length(arc), pos.z);
+        let theta = arc.lerpc(zi);
+
+        // move x origin from far left to center
+        let width = arc.size().x  / (T::one() + T::one());
+        let x = maths::clamp(-width, width, width - pos.x);
+
+        //y is the same, just clamped
+        let y = maths::clamp(T::zero(), arc.size().y, pos.y);
+
+        // construct TPos and return
+        self.tpos_to_world(TPos::new(x, y, theta))
     }
 }

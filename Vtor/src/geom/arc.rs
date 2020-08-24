@@ -38,9 +38,8 @@ impl<T> Arc<T> where T: GeoNum {
         self.b - self.a
     }
 
-    pub fn length(&self, radius: T) -> T {
-        let pi2 = T::from_f64(std::f64::consts::PI * 2.).unwrap();
-        (self.arc() / pi2) * radius
+    pub fn circ(&self) -> T {
+        self.arc() / T::rad()
     }
 
     pub fn size(&self) -> Vec2<T> {

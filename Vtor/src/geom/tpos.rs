@@ -3,8 +3,8 @@ use vek::Vec3;
 
 /// Represents a position from the Torus's "walking edge" (outer edge with "up" towards the center of the torus)
 /// Theta is the angle of the point from the center of the torus.
-/// y is height offset from "floor", where floor is the outer edge. 
 /// x is horizontal offset, with 0 being the center.
+/// y is height offset from "floor", where floor is the outer edge. 
 #[derive(Clone, Debug)]
 pub struct TPos<T> where T: GeoNum {
     pub x: T,
