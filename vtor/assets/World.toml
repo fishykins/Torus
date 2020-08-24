@@ -1,0 +1,9 @@
+[station]
+sectors = 6
+major = 800.0
+minor = 32.0
+
+[sectors]
+modules = 3
+
+[modules]

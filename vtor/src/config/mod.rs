@@ -1,6 +1,10 @@
 mod station_cfg;
+mod sector_cfg;
+mod module_cfg;
 
 pub use station_cfg::StationCfg;
+pub use sector_cfg::SectorCfg;
+pub use module_cfg::ModuleCfg;
 
 use serde::Deserialize;
 use std::fs;
@@ -8,6 +12,8 @@ use std::fs;
 #[derive(Deserialize, Clone)]
 pub struct Config {
     pub station: StationCfg,
+    pub sectors: SectorCfg,
+    pub modules: ModuleCfg,
 }
 
 

@@ -5,7 +5,7 @@ use vek::Vec3;
 /// Theta is the angle of the point from the center of the torus.
 /// x is horizontal offset, with 0 being the center.
 /// y is height offset from "floor", where floor is the outer edge. 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct TPos<T> where T: GeoNum {
     pub x: T,
     pub y: T,

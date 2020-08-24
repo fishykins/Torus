@@ -1,7 +1,7 @@
 use corale::core::GeoNum;
 use super::TPos;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct TBounds<T> where T: GeoNum {
     min: TPos<T>,
     max: TPos<T>,

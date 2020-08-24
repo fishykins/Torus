@@ -1,5 +1,5 @@
 [package]
-name = "Vtor"
+name = "vtor"
 version = "0.1.0"
 authors = ["Fishykins <caspar.m.green@gmail.com>"]
 edition = "2018"
