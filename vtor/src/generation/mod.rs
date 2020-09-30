@@ -1,3 +1,1 @@
-mod sector;
-
-pub use sector::Sector;
+pub mod maze;

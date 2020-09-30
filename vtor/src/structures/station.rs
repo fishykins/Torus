@@ -1,15 +1,15 @@
 use corale::core::GeoNum;
-use crate::geom::{Torus, Arc};
+use crate::geom::{Torus};
 use crate::config::*;
-use crate::generation::Sector;
+use super::Sector;
 use super::Module;
 use vek::Vec3;
 use std::f64;
 
 pub struct Station<T> where T: GeoNum {
-    torus: Torus<T>,
-    config: Config,
-    modules: Vec<Module<T>>,
+    pub(crate) torus: Torus<T>,
+    pub(crate) config: Config,
+    pub(crate) modules: Vec<Module<T>>,
 }
 
 
@@ -27,7 +27,8 @@ impl<'a, T> Station<T> where T: GeoNum {
         for i in 0..sector_count {
             let sector = Sector::<T>::new(i, ang_incr);
             for (j, arc) in sector.arc().subdivide(module_count).iter().enumerate() {
-                let module = Module::new(j * sector.uid(), *arc);
+                let bbox = torus.make_arc_bbox(arc);
+                let module = Module::new(j * sector.uid(), *arc, bbox);
                 modules.push(module);
             }
         }
@@ -45,10 +46,6 @@ impl<'a, T> Station<T> where T: GeoNum {
 
     pub fn module(&self, i: usize) -> &Module<T> {
         &self.modules[i]
-    }
-
-    pub fn config(&self) -> &Config {
-        &self.config
     }
 }
 
