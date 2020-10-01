@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use corale::core::OrdNum;
+use prima::core::OrdNum;
 
 #[derive(Deserialize, Clone)]
 pub struct StationCfg {

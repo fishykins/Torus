@@ -1,5 +1,5 @@
-use corale::core::GeoNum;
-use corale::geom::BoundingBox;
+use prima::core::GeoNum;
+use prima::geom::BoundingBox;
 use crate::geom::{Arc};
 
 #[derive(Clone)]

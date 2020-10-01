@@ -5,7 +5,7 @@ authors = ["Fishykins <caspar.m.green@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-corale = { path = "/home/fishy/Projects/corale" }
+prima = { path = "/home/fishy/Projects/prima" }
 vek = "^0.12.0"
 toml = "^0.5.6"
 serde = "^1.0.1"

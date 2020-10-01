@@ -1,4 +1,4 @@
-use corale::core::GeoNum;
+use prima::core::GeoNum;
 use super::TPos;
 
 #[derive(Clone, Copy, Debug)]

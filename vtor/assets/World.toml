@@ -7,3 +7,7 @@ minor = 32.0
 modules = 3
 
 [modules]
+
+[humans]
+width = 1.2
+height = 2.2

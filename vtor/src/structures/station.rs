@@ -1,4 +1,4 @@
-use corale::core::GeoNum;
+use prima::core::GeoNum;
 use crate::geom::{Torus};
 use crate::config::*;
 use super::Sector;
@@ -8,7 +8,7 @@ use std::f64;
 
 pub struct Station<T> where T: GeoNum {
     pub(crate) torus: Torus<T>,
-    pub(crate) config: Config,
+    pub(crate) _config: Config,
     pub(crate) modules: Vec<Module<T>>,
 }
 
@@ -36,7 +36,7 @@ impl<'a, T> Station<T> where T: GeoNum {
         Self {
             torus,
             modules,
-            config,
+            _config: config,
         }
     }
 
@@ -52,5 +52,5 @@ impl<'a, T> Station<T> where T: GeoNum {
 #[test]
 fn station_test() {
     let cfg = Config::import("assets/World.toml");
-    let station = Station::<f64>::new(cfg);
+    let _station = Station::<f64>::new(cfg);
 }

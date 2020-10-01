@@ -1,4 +1,4 @@
-use corale::core::GeoNum;
+use prima::core::GeoNum;
 use vek::Vec3;
 
 /// Represents a position from the Torus's "walking edge" (outer edge with "up" towards the center of the torus)

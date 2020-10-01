@@ -1,8 +1,8 @@
-use corale::core::{GeoNum, maths};
-use corale::geom::Torus as CoraleTorus;
-use corale::geom::{BoundingBox};
-use vek::Vec3;
+use prima::core::{GeoNum, maths};
+use prima::geom::{BoundingBox};
+use vek::{Vec3};
 use super::{Arc, TPos};
+
 
 pub struct Torus<T> where T: GeoNum {
     major: T,
@@ -10,7 +10,16 @@ pub struct Torus<T> where T: GeoNum {
     pos: Vec3<T>,
 }
 
-impl<T> CoraleTorus<T> for Torus<T> where T: GeoNum {
+#[allow(dead_code)]
+impl<T> Torus<T> where T: GeoNum {
+    pub fn new(major: T, minor: T, pos: Vec3<T>) -> Self {
+        Self {
+            major,
+            minor,
+            pos,
+        }
+    }
+
     fn major(&self) -> T {
         self.major
     }
@@ -21,16 +30,6 @@ impl<T> CoraleTorus<T> for Torus<T> where T: GeoNum {
 
     fn center(&self) -> Vec3<T> {
         self.pos
-    }
-}
-
-impl<T> Torus<T> where T: GeoNum {
-    pub fn new(major: T, minor: T, pos: Vec3<T>) -> Self {
-        Self {
-            major,
-            minor,
-            pos,
-        }
     }
 
     /// helper function to ensure all length calculations are the same
@@ -44,8 +43,10 @@ impl<T> Torus<T> where T: GeoNum {
         let height = arc.size().y;
         let depth = self.arc_length(arc);
         let max = Vec3::new(width, height, depth);
-        BoundingBox::new(Vec3::zero(), max)
-
+        BoundingBox {
+            min: Vec3::zero(),
+            max,
+        }
     }
 
     /// takes a TPos and converts it to world-space

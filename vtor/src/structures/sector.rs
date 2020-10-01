@@ -1,4 +1,4 @@
-use corale::core::GeoNum;
+use prima::core::GeoNum;
 use crate::geom::Arc;
 
 

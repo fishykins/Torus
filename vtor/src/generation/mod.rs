@@ -1,1 +1,3 @@
-pub mod maze;
+mod module;
+
+pub use module::Module;

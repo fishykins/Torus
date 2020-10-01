@@ -1,5 +1,5 @@
-use corale::core::GeoNum;
-use corale::core::maths;
+use prima::core::GeoNum;
+use prima::core::maths;
 use vek::Vec2;
 use super::{TPos, TBounds};
 
