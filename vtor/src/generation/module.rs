@@ -1,7 +1,8 @@
-use vek::{Rgb, Vec2, Extent2};
-use prima::geom::{BoundingRect, Line, LineExt};
+use vek::{Rgb, Vec2};
+use prima::geom::{BoundingRect, Line};
 use prima::render::{RgbImage, Draw};
 use rand::prelude::*;
+use super::{Room};
 
 const _HOMAN_WIDTH: f32 = 1.2;
 const _HOMAN_HEIGHT: f32 = 2.2;
@@ -14,31 +15,10 @@ const OVERFLOW_ROOMS: usize = 10;
 
 const IMAGE_SCALE: u32 = 4;
 
-#[derive(Clone)]
-pub struct Room {
-    pub rect: BoundingRect<f32>,
-    pub connected: Vec<usize>,
-    pub main: bool,
-}
-
 #[allow(dead_code)]
 pub struct Module {
     pub bounds: BoundingRect<f32>,
     pub rooms: Vec<Room>,
-}
-
-impl Room {
-    pub fn new(rect: BoundingRect<f32>) -> Self {
-        Self {
-            rect,
-            connected: Vec::new(),
-            main: false,
-        }
-    }
-
-    pub fn size(&self) -> Extent2<f32> {
-        self.rect.size()
-    }
 }
 
 impl Module {
@@ -121,42 +101,20 @@ impl Module {
         println!("Room count: {}", rooms.len());
 
         // Connect rooms
-        // Find any obvious links, such as intersecting or touching rooms
-        let rooms_cloned = rooms.clone();
-
         for i in 0..rooms.len() {
-
-            let adj = find_adjacant_rooms(&rooms, i);
-            println!("Room {}: {:?}", i, adj);
-
-            let a = &mut rooms[i];
-            let mut nearest: Option<f32> = None;
-            let mut nearest_index = 0;
-
-            for (j, b) in rooms_cloned.iter().enumerate().map(|(i, b)| (i, b.rect)) {
+            for j in find_adjacant_rooms(&rooms, i) {
                 if i == j {
                     continue;
                 }
-
-                let dist = a.rect.center().distance(b.center());
-                if nearest.is_none() {
-                    nearest = Some(dist);
-                } else {
-                    if dist < nearest.unwrap() {
-                        nearest = Some(dist);
-                        nearest_index = j;
-                    }
-                }
+                connect_rooms(&mut rooms, i, j, true);
+            }
+            if rooms[i].connected().len() == 0 {
+                //Nearest room instead
+                let j = find_nearest_room(&rooms, i);
+                connect_rooms(&mut rooms, i, j, false);
             }
 
-            if nearest.is_some() {
-                if !a.connected.contains(&nearest_index) {
-                    a.connected.push(nearest_index);
-                }
-                if !rooms[nearest_index].connected.contains(&i) {
-                    rooms[nearest_index].connected.push(i);
-                }
-            }
+            println!("Room {} is connected to {:?}", i, rooms[i].connected());
         }
 
         // Find "islands" of connected rooms
@@ -190,17 +148,24 @@ impl Module {
 
             boundingbox.into_rect().draw(&mut img, colour);
 
-            for j in room.connected.iter() {
-                if *j > i {
+            for j in room.links() {
+                if j.target > i {
                     // Only draws the line if target is bigger index. Prevents doubles
                     let a = self.rooms[i].rect;
-                    let b = self.rooms[*j].rect;
+                    let b = self.rooms[j.target].rect;
 
                     let line = Line {
                         start: a.center() * IMAGE_SCALE as f32,
                         end: b.center() * IMAGE_SCALE as f32,
                     };
-                    line.draw(&mut img, Rgb::new(0,255,0));
+
+                    let colour = if j.direct {
+                        Rgb::new(0,255,0)
+                    } else {
+                        Rgb::new(255,255,0)
+                    };
+
+                    line.draw(&mut img, colour);
                 }
             }
         }
@@ -228,6 +193,29 @@ fn find_adjacant_rooms(rooms: &Vec<Room>, index: usize) -> Vec<usize> {
     neighbors
 }
 
+fn find_nearest_room(rooms: &Vec<Room>, index: usize) -> usize {
+    let rect = &rooms[index].rect;
+    let mut nearest = index;
+    let mut nearest_distance = f32::MAX;
+
+    for (i, rhs) in rooms.iter().enumerate().map(|(i, rhs)| (i, rhs.rect)) {
+        if i == index {
+            continue;
+        }
+        let dist = rect.center().distance(rhs.center());
+        if dist < nearest_distance {
+            nearest = i;
+            nearest_distance = dist;
+        }
+    }
+    nearest
+}
+
+fn connect_rooms(rooms: &mut Vec<Room>, a: usize, b: usize, direct: bool) {
+    rooms[a].link(b, direct);
+    rooms[b].link(a, direct);
+}
+
 fn recursively_collect_islands(rooms: &Vec<Room>, islands: &mut Vec<Vec<usize>>, room_index: usize) {
     let room = &rooms[room_index];
     let mut island_index: Option<usize> = None;
@@ -252,7 +240,7 @@ fn recursively_collect_islands(rooms: &Vec<Room>, islands: &mut Vec<Vec<usize>>,
 
     let mut room_q = Vec::new();
 
-    for c in room.connected.iter() {
+    for c in room.connected().iter() {
         if !islands[i].contains(c) {
             // This room has not been seen before- recursively add it!
             islands[i].push(*c);
@@ -283,6 +271,6 @@ fn recursively_collect_islands(rooms: &Vec<Room>, islands: &mut Vec<Vec<usize>>,
 
 #[test]
 fn module_test() {
-    let module = Module::new(0785, 7);
+    let module = Module::new(1992, 7);
     module.export();
 }
