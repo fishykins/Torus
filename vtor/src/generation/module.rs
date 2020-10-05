@@ -1,3 +1,4 @@
+use crate::config::ModuleCfg;
 use super::{Room, LinkType};
 use vek::{Rgb, Vec2};
 use prima::geom::{BoundingRect, Line, LineExt};
@@ -5,42 +6,36 @@ use prima::render::{RgbImage, Draw};
 use prima::core::maths::*;
 use rand::prelude::*;
 
-
-const _HOMAN_WIDTH: f32 = 1.2;
-const _HOMAN_HEIGHT: f32 = 2.2;
-const MODULE_WIDTH: f32 = 64.;
-const _MODULE_HEIGHT: f32 = 32.;
-const MODULE_DEPTH: f32 = 128.;
-
-const SPLIT_OFFSET: f32 = 0.2;
-const OVERFLOW_ROOMS: usize = 10;
-
 const IMAGE_SCALE: u32 = 4;
 
 #[allow(dead_code)]
 pub struct Module {
     pub bounds: BoundingRect<f32>,
     pub rooms: Vec<Room>,
+    pub islands: Vec<Vec<usize>>,
     most_junctions: usize,
 }
 
 impl Module {
-    pub fn new(seed: u64, room_count: usize) -> Self {
+    pub fn new(config: ModuleCfg) -> Self {
         let mut bounds = BoundingRect::new_empty(Vec2::zero());
-        bounds.max = Vec2::new(MODULE_WIDTH, MODULE_DEPTH);
+        bounds.max = Vec2::new(config.extent().w, config.extent().h);
         bounds.make_valid();
 
         let mut rooms = vec![Room::new(bounds.clone())];
-        let mut rng = StdRng::seed_from_u64(seed);
+        let mut rng = StdRng::seed_from_u64(config.seed);
+
+        let mut offset = clamp01(config.split_offset);
+        let degredation = clamp01(config.split_degredation);
 
 
-        for _ in 0.. (room_count - 1) + OVERFLOW_ROOMS {
+        for _ in 0.. (config.room_count - 1) + config.room_overflow {
 
             let mut index = 0;
 
             let v: f32 = rng.gen();
 
-            if v > 0.55 {
+            if v > config.divide_area_chance {
                 let mut largest_area = 0.;
                 for (i, room) in rooms.iter().enumerate() {
                     let area = room.size().w * room.size().h;
@@ -49,7 +44,7 @@ impl Module {
                         index = i;
                     }
                 }
-            } else if v > 0.1 {
+            } else if v > config.divide_disparity_chance {
                 let mut largest_disparity = 0.;
                 for (i, room) in rooms.iter().enumerate() {
                     let disp = (room.size().w - room.size().h).abs();
@@ -64,7 +59,9 @@ impl Module {
             
             let random_room = rooms[index].clone();
             let extent = random_room.size();
-            let r: f32 = rng.gen_range::<f32, f32, f32>(SPLIT_OFFSET, 1. - SPLIT_OFFSET);
+            let r: f32 = rng.gen_range::<f32, f32, f32>(offset, 1. - offset);
+            // Degrade offset so it becomes less centered
+            offset *= degredation;
 
             rooms.remove(index);
             if extent.w > extent.h {
@@ -83,7 +80,7 @@ impl Module {
         }
 
         // Remove some random rooms
-        for _ in 0..OVERFLOW_ROOMS {
+        for _ in 0..config.room_overflow {
             let index = rng.gen_range(0, rooms.len());
             rooms.remove(index);
         }
@@ -202,6 +199,7 @@ impl Module {
         Self {
             bounds,
             rooms,
+            islands,
             most_junctions,
         }
     }
@@ -353,6 +351,17 @@ fn recursively_collect_islands(rooms: &Vec<Room>, islands: &mut Vec<Vec<usize>>,
 
 #[test]
 fn module_test() {
-    let module = Module::new(78941, 17);
+    let cfg = ModuleCfg {
+        seed: 563,
+        room_count: 12,
+        room_overflow: 12,
+        extent: [64., 128.],
+        divide_area_chance: 0.1,
+        divide_disparity_chance: 0.4,
+        split_offset: 0.4,
+        split_degredation: 0.98,
+    };
+
+    let module = Module::new(cfg);
     module.export();
 }
