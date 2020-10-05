@@ -5,7 +5,7 @@ use serde::Deserialize;
 pub struct ModuleCfg {
     pub seed: u64,
     pub room_count: usize,
-    pub room_overflow: usize,
+    pub divisions: usize,
     pub extent: [f32; 2],
     pub divide_area_chance: f32,
     pub divide_disparity_chance: f32,
@@ -18,7 +18,7 @@ impl ModuleCfg {
         Self {
             seed,
             room_count,
-            room_overflow: (room_count as f32 / 2.) as usize,
+            divisions: (room_count as f32 / 2.) as usize,
             extent: [64., 128.],
             divide_area_chance: 0.55,
             divide_disparity_chance: 0.1,

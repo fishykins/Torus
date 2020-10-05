@@ -1,7 +1,3 @@
-mod module;
-mod room;
-mod link;
+mod module_factory;
 
-pub use link::{Link, LinkType};
-pub use room::Room;
-pub use module::Module;
+pub use module_factory::ModuleFactory;

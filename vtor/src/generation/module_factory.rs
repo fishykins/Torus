@@ -1,5 +1,5 @@
 use crate::config::ModuleCfg;
-use super::{Room, LinkType};
+use crate::structures::{Room, LinkType};
 use vek::{Rgb, Vec2};
 use prima::geom::{BoundingRect, Line, LineExt};
 use prima::render::{RgbImage, Draw};
@@ -9,14 +9,15 @@ use rand::prelude::*;
 const IMAGE_SCALE: u32 = 4;
 
 #[allow(dead_code)]
-pub struct Module {
+pub struct ModuleFactory {
     pub bounds: BoundingRect<f32>,
     pub rooms: Vec<Room>,
     pub islands: Vec<Vec<usize>>,
     most_junctions: usize,
 }
 
-impl Module {
+impl ModuleFactory {
+    /// Generates a brand new module using the given config. Will do the absolute minimum generation and leave pathfinding execution order to the end user.
     pub fn new(config: ModuleCfg) -> Self {
         let mut bounds = BoundingRect::new_empty(Vec2::zero());
         bounds.max = Vec2::new(config.extent().w, config.extent().h);
@@ -29,7 +30,7 @@ impl Module {
         let degredation = clamp01(config.split_degredation);
 
 
-        for _ in 0.. (config.room_count - 1) + config.room_overflow {
+        for _ in 0..config.divisions {
 
             let mut index = 0;
 
@@ -80,60 +81,64 @@ impl Module {
         }
 
         // Remove some random rooms
-        for _ in 0..config.room_overflow {
+        for _ in 0..config.divisions {
             let index = rng.gen_range(0, rooms.len());
             rooms.remove(index);
         }
 
-        // Find main room
-        let mut largest_area = 0.;
-        let mut main_room = 0;
-
-        for (i, room) in rooms.iter().enumerate() {
-            let area = room.size().w * room.size().h;
-            if area > largest_area {
-                largest_area = area;
-                main_room = i;
-            }
-        }
-
         println!("Room count: {}", rooms.len());
 
-        // Connect rooms
-        for i in 0..rooms.len() {
-            for j in find_adjacant_rooms(&rooms, i) {
+        Self {
+            bounds,
+            rooms,
+            islands: Vec::new(),
+            most_junctions: 0,
+        }
+    }
+
+    /// Generates a module with the given config and executes default pathfinding workflow.
+    pub fn default(config: ModuleCfg) -> Self {
+        let mut module = Self::new(config);
+        module.link_rooms(true);
+        module.generate_islands();
+        module.link_islands();
+        module.calculate_statistics();
+        return module
+    }
+
+    /// As far as possible, connects all rooms to their neighbors. 
+    /// If allow_nearest, isolated rooms are allowed to link to their nearest neighbor. 
+    pub fn link_rooms(&mut self, allow_nearest: bool) {
+        for i in 0..self.rooms.len() {
+            for j in find_adjacant_rooms(&self.rooms, i) {
                 if i == j {
                     continue;
                 }
-                connect_rooms(&mut rooms, i, j, LinkType::Direct);
+                connect_rooms(&mut self.rooms, i, j, LinkType::Direct);
             }
-            if rooms[i].connected().len() == 0 {
+            if self.rooms[i].connected().len() == 0 && allow_nearest {
                 //Nearest room instead
-                let j = find_nearest_room(&rooms, i);
-                connect_rooms(&mut rooms, i, j, LinkType::Tunnel);
+                let j = find_nearest_room(&self.rooms, i);
+                connect_rooms(&mut self.rooms, i, j, LinkType::Tunnel);
             }
-
-            println!("Room {} is connected to {:?}", i, rooms[i].connected());
         }
+    }
 
-        // Find "islands" of connected rooms
+    pub fn generate_islands(&mut self) {
         let mut islands = Vec::new();
-        recursively_collect_islands(&rooms, &mut islands, 0, 0);
-        println!("Found {} islands: ", islands.len());
+        recursively_collect_islands(&self.rooms, &mut islands, 0, 0);
+        self.islands = islands;
+    }
 
-        for i in islands.iter() {
-            println!("  {:?}", i);
-        }
-        
-        // Link islands
-        for island in islands.iter() {
+    pub fn link_islands(&mut self) {
+        for island in self.islands.iter() {
             let mut nearest = f32::MAX;
             let mut nearest_index = (0, 0);
 
             for island_room_index in island.iter() {
-                for (i, room) in rooms.iter().enumerate() {
+                for (i, room) in self.rooms.iter().enumerate() {
                     if !island.contains(&i) {
-                        let dist = rooms[*island_room_index].rect.center().distance(room.rect.center());
+                        let dist = self.rooms[*island_room_index].rect.center().distance(room.rect.center());
                         if dist < nearest {
                             nearest = dist;
                             nearest_index = (*island_room_index, i);
@@ -143,27 +148,39 @@ impl Module {
             }
 
             if nearest != f32::MAX {
-                connect_rooms(&mut rooms, nearest_index.0, nearest_index.1, LinkType::Bridge);
+                connect_rooms(&mut self.rooms, nearest_index.0, nearest_index.1, LinkType::Bridge);
+            }
+        }
+    }
+
+    pub fn link_raycasting(&mut self) {
+        // Find main room
+        let mut largest_area = 0.;
+        let mut main_room = 0;
+
+        for (i, room) in self.rooms.iter().enumerate() {
+            let area = room.size().w * room.size().h;
+            if area > largest_area {
+                largest_area = area;
+                main_room = i;
             }
         }
 
-        // At this point, we can navigate from the main room to any other room we like. Time to add some extra pathways
-
         // Lets try and link every room to the main room directly, using ray casting
-        let main_room_pos = rooms[main_room].rect.center();
-        for i in 0..rooms.len() {
+        let main_room_pos = self.rooms[main_room].rect.center();
+        for i in 0..self.rooms.len() {
             if i == main_room {
                 continue;
             }
 
             let ray = Line {
-                start: rooms[i].rect.center(),
+                start: self.rooms[i].rect.center(),
                 end: main_room_pos,
             };
 
             // Check to see if this ray intersects any rooms other than ours or main
             let mut intersect = false;
-            for (j, r2) in rooms.iter().enumerate() {
+            for (j, r2) in self.rooms.iter().enumerate() {
                 if j == main_room || j == i {
                     continue;
                 }
@@ -174,33 +191,27 @@ impl Module {
                 }
             }
 
-            if !intersect && !rooms[i].is_linked(main_room) {
-                connect_rooms(&mut rooms, i, main_room, LinkType::Main);
+            if !intersect && !self.rooms[i].is_linked(main_room) {
+                connect_rooms(&mut self.rooms, i, main_room, LinkType::Main);
             }
         }
+    }
 
+    pub fn calculate_statistics(&mut self) {
         // Statistical analysis
         let mut most_junctions = 1;
 
-        for r in rooms.iter() {
+        for r in self.rooms.iter() {
             let len = r.connected().len();
             if  len > most_junctions {
                 most_junctions = len;
             }
         }
 
-        for i in 0..rooms.len() {
-            let junctions = rooms[i].connected().len() as f32;
+        for i in 0..self.rooms.len() {
+            let junctions = self.rooms[i].connected().len() as f32;
             let focus = inverse_lerp(1., most_junctions as f32, junctions);
-            rooms[i].value = lerpc(0.,1., focus);
-            println!("Room {} has a value of {}", i, rooms[i].value);
-        }
-
-        Self {
-            bounds,
-            rooms,
-            islands,
-            most_junctions,
+            self.rooms[i].value = lerpc(0.,1., focus);
         }
     }
 
@@ -350,11 +361,11 @@ fn recursively_collect_islands(rooms: &Vec<Room>, islands: &mut Vec<Vec<usize>>,
 }
 
 #[test]
-fn module_test() {
+fn module_factory_test() {
     let cfg = ModuleCfg {
         seed: 563,
         room_count: 12,
-        room_overflow: 12,
+        divisions: 40,
         extent: [64., 128.],
         divide_area_chance: 0.1,
         divide_disparity_chance: 0.4,
@@ -362,6 +373,10 @@ fn module_test() {
         split_degredation: 0.98,
     };
 
-    let module = Module::new(cfg);
+    let mut module = ModuleFactory::new(cfg);
+    module.link_rooms(true);
+    module.generate_islands();
+    module.link_islands();
+    module.calculate_statistics();
     module.export();
 }

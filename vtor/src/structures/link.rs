@@ -8,6 +8,7 @@ pub enum LinkType {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+/// Links are intended to be used as connection nodes between two rooms.
 pub struct Link {
     pub link_type: LinkType,
     pub target: usize,
