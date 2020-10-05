@@ -1,11 +1,11 @@
 use vek::{Extent2};
 use prima::geom::{BoundingRect};
-use super::Link;
+use super::{Link, LinkType};
 
 #[derive(Clone)]
 pub struct Room {
     pub rect: BoundingRect<f32>,
-    pub main: bool,
+    pub value: f32,
     links: Vec<Link>,
 }
 
@@ -14,7 +14,7 @@ impl Room {
         Self {
             rect,
             links: Vec::new(),
-            main: false,
+            value: 0.
         }
     }
 
@@ -38,8 +38,8 @@ impl Room {
         self.connected().contains(&other)
     }
 
-    pub fn link(&mut self, other: usize, direct: bool) {
-        let link = Link::new(other, direct);
+    pub fn link(&mut self, other: usize, link_type: LinkType) {
+        let link = Link::new(other, link_type);
         if !self.links.contains(&link) {
             self.links.push(link);
         }

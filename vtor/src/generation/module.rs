@@ -1,8 +1,10 @@
+use super::{Room, LinkType};
 use vek::{Rgb, Vec2};
-use prima::geom::{BoundingRect, Line};
+use prima::geom::{BoundingRect, Line, LineExt};
 use prima::render::{RgbImage, Draw};
+use prima::core::maths::*;
 use rand::prelude::*;
-use super::{Room};
+
 
 const _HOMAN_WIDTH: f32 = 1.2;
 const _HOMAN_HEIGHT: f32 = 2.2;
@@ -19,6 +21,7 @@ const IMAGE_SCALE: u32 = 4;
 pub struct Module {
     pub bounds: BoundingRect<f32>,
     pub rooms: Vec<Room>,
+    most_junctions: usize,
 }
 
 impl Module {
@@ -97,7 +100,6 @@ impl Module {
             }
         }
 
-        rooms[main_room].main = true;
         println!("Room count: {}", rooms.len());
 
         // Connect rooms
@@ -106,12 +108,12 @@ impl Module {
                 if i == j {
                     continue;
                 }
-                connect_rooms(&mut rooms, i, j, true);
+                connect_rooms(&mut rooms, i, j, LinkType::Direct);
             }
             if rooms[i].connected().len() == 0 {
                 //Nearest room instead
                 let j = find_nearest_room(&rooms, i);
-                connect_rooms(&mut rooms, i, j, false);
+                connect_rooms(&mut rooms, i, j, LinkType::Tunnel);
             }
 
             println!("Room {} is connected to {:?}", i, rooms[i].connected());
@@ -119,15 +121,88 @@ impl Module {
 
         // Find "islands" of connected rooms
         let mut islands = Vec::new();
-        recursively_collect_islands(&rooms, &mut islands, 0);
+        recursively_collect_islands(&rooms, &mut islands, 0, 0);
         println!("Found {} islands: ", islands.len());
+
+        for i in islands.iter() {
+            println!("  {:?}", i);
+        }
         
         // Link islands
-        
+        for island in islands.iter() {
+            let mut nearest = f32::MAX;
+            let mut nearest_index = (0, 0);
+
+            for island_room_index in island.iter() {
+                for (i, room) in rooms.iter().enumerate() {
+                    if !island.contains(&i) {
+                        let dist = rooms[*island_room_index].rect.center().distance(room.rect.center());
+                        if dist < nearest {
+                            nearest = dist;
+                            nearest_index = (*island_room_index, i);
+                        }
+                    }
+                }
+            }
+
+            if nearest != f32::MAX {
+                connect_rooms(&mut rooms, nearest_index.0, nearest_index.1, LinkType::Bridge);
+            }
+        }
+
+        // At this point, we can navigate from the main room to any other room we like. Time to add some extra pathways
+
+        // Lets try and link every room to the main room directly, using ray casting
+        let main_room_pos = rooms[main_room].rect.center();
+        for i in 0..rooms.len() {
+            if i == main_room {
+                continue;
+            }
+
+            let ray = Line {
+                start: rooms[i].rect.center(),
+                end: main_room_pos,
+            };
+
+            // Check to see if this ray intersects any rooms other than ours or main
+            let mut intersect = false;
+            for (j, r2) in rooms.iter().enumerate() {
+                if j == main_room || j == i {
+                    continue;
+                }
+
+                if ray.intersects_rect(&r2.rect.into_rect()) {
+                    intersect = true;
+                    break;
+                }
+            }
+
+            if !intersect && !rooms[i].is_linked(main_room) {
+                connect_rooms(&mut rooms, i, main_room, LinkType::Main);
+            }
+        }
+
+        // Statistical analysis
+        let mut most_junctions = 1;
+
+        for r in rooms.iter() {
+            let len = r.connected().len();
+            if  len > most_junctions {
+                most_junctions = len;
+            }
+        }
+
+        for i in 0..rooms.len() {
+            let junctions = rooms[i].connected().len() as f32;
+            let focus = inverse_lerp(1., most_junctions as f32, junctions);
+            rooms[i].value = lerpc(0.,1., focus);
+            println!("Room {} has a value of {}", i, rooms[i].value);
+        }
 
         Self {
             bounds,
             rooms,
+            most_junctions,
         }
     }
 
@@ -140,13 +215,10 @@ impl Module {
                 max: room.rect.max * IMAGE_SCALE as f32,
             }.made_valid();
 
-            let colour = if room.main {
-                Rgb::new(0,0,255)
-            } else {
-                Rgb::new(255,0,0)
-            };
+            let red: u8 = lerpc(0., 255., 1. - room.value) as u8;
+            let green: u8 = lerpc(0., 255., room.value) as u8;
 
-            boundingbox.into_rect().draw(&mut img, colour);
+            boundingbox.into_rect().draw(&mut img, Rgb::new(red,green,0));
 
             for j in room.links() {
                 if j.target > i {
@@ -159,10 +231,11 @@ impl Module {
                         end: b.center() * IMAGE_SCALE as f32,
                     };
 
-                    let colour = if j.direct {
-                        Rgb::new(0,255,0)
-                    } else {
-                        Rgb::new(255,255,0)
+                    let colour = match j.link_type {
+                        LinkType::Direct => Rgb::new(0,255,0),
+                        LinkType::Bridge => Rgb::new(0,255,255),
+                        LinkType::Tunnel => Rgb::new(255,255,0),
+                        LinkType::Main => Rgb::new(82,56,255),
                     };
 
                     line.draw(&mut img, colour);
@@ -211,36 +284,41 @@ fn find_nearest_room(rooms: &Vec<Room>, index: usize) -> usize {
     nearest
 }
 
-fn connect_rooms(rooms: &mut Vec<Room>, a: usize, b: usize, direct: bool) {
-    rooms[a].link(b, direct);
-    rooms[b].link(a, direct);
+fn connect_rooms(rooms: &mut Vec<Room>, a: usize, b: usize, link_type: LinkType) {
+    rooms[a].link(b, link_type);
+    rooms[b].link(a, link_type);
 }
 
-fn recursively_collect_islands(rooms: &Vec<Room>, islands: &mut Vec<Vec<usize>>, room_index: usize) {
+fn recursively_collect_islands(rooms: &Vec<Room>, islands: &mut Vec<Vec<usize>>, room_index: usize, depth: usize) {
     let room = &rooms[room_index];
     let mut island_index: Option<usize> = None;
+
+    println!("Running Recursive collect on room {} (depth {})...", room_index, depth);
 
     // Check to see if we have an island
     for (i, island) in islands.iter().enumerate() {
         if island.contains(&room_index) {
             // All good, carry on
             island_index = Some(i);
+            println!("    found island index {}...", i);
             break;
         }
     }
 
     if island_index.is_none() {
         // We need to initiate an island
+        println!("    no island found- made island index {}...", islands.len());
         island_index = Some(islands.len());
         islands.push(vec!(room_index));
     }
 
     let i = island_index.unwrap(); // Will allwways work as we ensure it is set
+    
     // We are already in the island- add our connected too
-
     let mut room_q = Vec::new();
 
     for c in room.connected().iter() {
+        println!("    found connected room {}", c);
         if !islands[i].contains(c) {
             // This room has not been seen before- recursively add it!
             islands[i].push(*c);
@@ -250,13 +328,17 @@ fn recursively_collect_islands(rooms: &Vec<Room>, islands: &mut Vec<Vec<usize>>,
 
     // Once we have added all the unseen connected rooms to our islands, run through them recursively
     for r in room_q.iter() {
-        recursively_collect_islands(&rooms, islands, *r);
+        recursively_collect_islands(&rooms, islands, *r, depth + 1);
     }
 
-    // Once we reach this point, we need to find a new island entierly. 
-    for r in room_index..rooms.len() {
+    // Once we reach this point, we need to find a new island entierly
+    if depth != 0 {
+        return;
+    }
+
+    for r in room_index + 1 .. rooms.len() {
         let mut has_island = false;
-        for (i, island) in islands.iter().enumerate() {
+        for island in islands.iter() {
             if island.contains(&r) {
                 has_island = true;
                 break;
@@ -264,13 +346,13 @@ fn recursively_collect_islands(rooms: &Vec<Room>, islands: &mut Vec<Vec<usize>>,
         }
 
         if !has_island {
-            recursively_collect_islands(&rooms, islands, r);
+            recursively_collect_islands(&rooms, islands, r, depth + 1);
         }
     }
 }
 
 #[test]
 fn module_test() {
-    let module = Module::new(1992, 7);
+    let module = Module::new(78941, 17);
     module.export();
 }
