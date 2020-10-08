@@ -81,7 +81,7 @@ impl ModuleFactory {
         }
 
         // Remove some random rooms
-        for _ in 0..config.divisions {
+        for _ in 0.. config.divisions - config.room_count {
             let index = rng.gen_range(0, rooms.len());
             rooms.remove(index);
         }
@@ -363,9 +363,9 @@ fn recursively_collect_islands(rooms: &Vec<Room>, islands: &mut Vec<Vec<usize>>,
 #[test]
 fn module_factory_test() {
     let cfg = ModuleCfg {
-        seed: 563,
+        seed: 73563,
         room_count: 12,
-        divisions: 40,
+        divisions: 32,
         extent: [64., 128.],
         divide_area_chance: 0.1,
         divide_disparity_chance: 0.4,
