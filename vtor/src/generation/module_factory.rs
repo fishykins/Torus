@@ -1,17 +1,19 @@
 use crate::config::ModuleCfg;
-use crate::structures::{Room, LinkType};
+use super::intersect::{Intersect, IntersectRef};
+use super::{Room, LinkType, IMG_SCALE};
+use crate::geom::Compass;
+
 use vek::{Rgb, Vec2};
 use prima::geom::{BoundingRect, Line, LineExt};
 use prima::render::{RgbImage, Draw};
 use prima::core::maths::*;
 use rand::prelude::*;
 
-const IMAGE_SCALE: u32 = 4;
-
 #[allow(dead_code)]
 pub struct ModuleFactory {
     pub bounds: BoundingRect<f32>,
     pub rooms: Vec<Room>,
+    pub intersects: Vec<Intersect>,
     pub islands: Vec<Vec<usize>>,
     most_junctions: usize,
 }
@@ -28,7 +30,6 @@ impl ModuleFactory {
 
         let mut offset = clamp01(config.split_offset);
         let degredation = clamp01(config.split_degredation);
-
 
         for _ in 0..config.divisions {
 
@@ -90,6 +91,7 @@ impl ModuleFactory {
 
         Self {
             bounds,
+            intersects: Vec::new(),
             rooms,
             islands: Vec::new(),
             most_junctions: 0,
@@ -114,7 +116,61 @@ impl ModuleFactory {
                 if i == j {
                     continue;
                 }
-                connect_rooms(&mut self.rooms, i, j, LinkType::Direct);
+
+                if j < i {
+                    // intersect has probably allready been found- grab it off the stack
+                    
+                    
+                } else {
+                    // Find the intersection line
+                    let room = self.rooms[i];
+                    let other = self.rooms[j];
+                    let west = room.rect.min.x == other.rect.max.x;
+                    let east = room.rect.max.x == other.rect.min.x;
+                    let north = room.rect.max.y == other.rect.min.y;
+                    let south = room.rect.min.y == other.rect.max.y;
+
+                    let line = if north || south {
+                        let x_max = room.rect.min.x.max(other.rect.min.x);
+                        let x_min = room.rect.max.x.min(other.rect.max.x);
+                        let y = if north {
+                            room.rect.max.y
+                        } else {
+                            room.rect.min.y
+                        };
+
+                        Line {
+                            start: Vec2::new(x_min, y),
+                            end: Vec2::new(x_max, y),
+                        }
+                    } else {
+                        let y_max = room.rect.min.y.max(other.rect.min.y);
+                        let y_min = room.rect.max.y.min(other.rect.max.y);
+                        let x = if east {
+                            room.rect.max.x
+                        } else if west {
+                            room.rect.min.x
+                        } else {
+                            panic!("cannot generate portal: unable to identify x");
+                        };
+
+                        Line {
+                            start: Vec2::new(x, y_min),
+                            end: Vec2::new(x, y_max),
+                        }
+                    };
+
+                    let edge = if west {
+                        Compass::West
+                    } else if east {
+                        Compass::East
+                    } else if north {
+                        Compass::North
+                    } else {
+                        Compass::South
+                    };
+                }
+                //connect_rooms(&mut self.rooms, i, j, LinkType::Direct);
             }
             if self.rooms[i].connected().len() == 0 && allow_nearest {
                 //Nearest room instead
@@ -146,7 +202,6 @@ impl ModuleFactory {
                     }
                 }
             }
-
             if nearest != f32::MAX {
                 connect_rooms(&mut self.rooms, nearest_index.0, nearest_index.1, LinkType::Bridge);
             }
@@ -215,19 +270,88 @@ impl ModuleFactory {
         }
     }
 
+    pub fn generate_portals(&mut self) {
+        for i in 0..self.rooms.len() {
+            let room = &self.rooms[i];
+            let mut intersects = Vec::new();
+
+            for link in room.links() {
+                let other = &self.rooms[link.target];
+                if link.link_type == LinkType::Direct {
+                    // This link requires only a single portal- find the cross-over
+                    let west = room.rect.min.x == other.rect.max.x;
+                    let east = room.rect.max.x == other.rect.min.x;
+                    let north = room.rect.max.y == other.rect.min.y;
+                    let south = room.rect.min.y == other.rect.max.y;
+
+                    let line = if north || south {
+                        let x_max = room.rect.min.x.max(other.rect.min.x);
+                        let x_min = room.rect.max.x.min(other.rect.max.x);
+                        let y = if north {
+                            room.rect.max.y
+                        } else {
+                            room.rect.min.y
+                        };
+
+                        Line {
+                            start: Vec2::new(x_min, y),
+                            end: Vec2::new(x_max, y),
+                        }
+                    } else {
+                        let y_max = room.rect.min.y.max(other.rect.min.y);
+                        let y_min = room.rect.max.y.min(other.rect.max.y);
+                        let x = if east {
+                            room.rect.max.x
+                        } else if west {
+                            room.rect.min.x
+                        } else {
+                            panic!("cannot generate portal: unable to identify x");
+                        };
+
+                        Line {
+                            start: Vec2::new(x, y_min),
+                            end: Vec2::new(x, y_max),
+                        }
+                    };
+
+                    let edge = if west {
+                        Compass::West
+                    } else if east {
+                        Compass::East
+                    } else if north {
+                        Compass::North
+                    } else {
+                        Compass::South
+                    };
+                    
+                    let intersect: Intersect = Intersect {
+                        line,
+                    };
+
+                    let intersect_ref = IntersectRef {
+                        intersect: 0,
+                        other: 
+                    }
+
+
+                    // We now have an edge segment that covers the overlap
+                    intersects.push(intersect);
+                }
+            }
+
+            // Take our cached value and apply
+            self.rooms[i].intersects = intersects;
+        }
+    }
+
     pub fn export(&self) {
-        let mut img = RgbImage::new(self.bounds.max.x as u32 * IMAGE_SCALE, self.bounds.max.y as u32 * IMAGE_SCALE);
+        let mut img = RgbImage::new(self.bounds.max.x as u32 * IMG_SCALE, self.bounds.max.y as u32 * IMG_SCALE);
 
         for (i, room) in self.rooms.iter().enumerate() {
-            let boundingbox = BoundingRect {
-                min: room.rect.min * IMAGE_SCALE as f32,
-                max: room.rect.max * IMAGE_SCALE as f32,
-            }.made_valid();
-
             let red: u8 = lerpc(0., 255., 1. - room.value) as u8;
             let green: u8 = lerpc(0., 255., room.value) as u8;
 
-            boundingbox.into_rect().draw(&mut img, Rgb::new(red,green,0));
+            room.draw(&mut img, Rgb::new(red,green,0));
 
             for j in room.links() {
                 if j.target > i {
@@ -236,8 +360,8 @@ impl ModuleFactory {
                     let b = self.rooms[j.target].rect;
 
                     let line = Line {
-                        start: a.center() * IMAGE_SCALE as f32,
-                        end: b.center() * IMAGE_SCALE as f32,
+                        start: a.center() * IMG_SCALE as f32,
+                        end: b.center() * IMG_SCALE as f32,
                     };
 
                     let colour = match j.link_type {
@@ -271,7 +395,6 @@ fn find_adjacant_rooms(rooms: &Vec<Room>, index: usize) -> Vec<usize> {
             neighbors.push(i);
         }
     }
-
     neighbors
 }
 
@@ -378,5 +501,6 @@ fn module_factory_test() {
     module.generate_islands();
     module.link_islands();
     module.calculate_statistics();
+    module.generate_portals();
     module.export();
 }

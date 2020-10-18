@@ -1,6 +1,8 @@
+use super::intersect::IntersectRef;
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum LinkType {
-    Direct,
+    Direct(IntersectRef),
     Tunnel,
     Bridge,
     Main,
