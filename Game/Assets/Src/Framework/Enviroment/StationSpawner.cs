@@ -1,13 +1,14 @@
 ﻿using UnityEngine;
-using Unity.Entities;
+//using Unity.Entities;
 using Unity.Transforms;
 using Unity.Rendering;
 using Unity.Mathematics;
-
+//using Unity.Physics;
 public class StationSpawner : MonoBehaviour
 {
     [SerializeField] private Mesh moduleMesh;// these are enterable things
     [SerializeField] private Material moduleMat;
+
 
 
     // Start is called before the first frame update
@@ -18,38 +19,32 @@ public class StationSpawner : MonoBehaviour
 
     private void MakeEntity()
     {
-        EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
         
 
         for (int i = 0; i < 18; i++)
         {
-            EntityArchetype archatype = entityManager.CreateArchetype(
-                typeof(Translation),
-                typeof(Rotation),
-                typeof(RenderMesh),
-                typeof(RenderBounds),
-                typeof(LocalToWorld)
-            );
 
 
-            Entity module = entityManager.CreateEntity(archatype);
+            Vector3 trans = new Vector3(0f, 0f, 0f);
+            Quaternion angle = Quaternion.Euler(360 / 18 * i, 0f, 0f);
+ 
 
-            entityManager.SetComponentData(module, new Translation
-            {
-                Value = new float3(0f, 0f, 1f)
-            });
 
-            entityManager.SetComponentData(module, new RenderBounds
-            {
-                Value = moduleMesh.bounds.ToAABB()
-            });
+            GameObject newMod = new GameObject("module" + i);
+            newMod.AddComponent<Rigidbody>();
+            newMod.AddComponent<MeshFilter>();
+            newMod.AddComponent<MeshRenderer>();
+            newMod.AddComponent<MeshCollider>();
+            newMod.transform.position = trans;
+            newMod.transform.rotation = angle;
 
-            entityManager.SetComponentData(module, new Rotation
-            {
-                Value = quaternion.AxisAngle(new float3(1f, 0f, 0f), 2 * math.PI / 18 * i)
-            });
+            newMod.GetComponent<MeshFilter>().mesh = moduleMesh;
+            newMod.GetComponent<MeshRenderer>().material = moduleMat;
+            newMod.GetComponent<MeshCollider>().sharedMesh = moduleMesh;
+            newMod.GetComponent<Rigidbody>().isKinematic = true;
+            newMod.GetComponent<Rigidbody>().useGravity = false;
 
-            entityManager.SetSharedComponentData<RenderMesh>(module,new RenderMesh { mesh = moduleMesh , material = moduleMat } );
+
         }
     }
 }
